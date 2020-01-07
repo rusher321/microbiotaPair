@@ -1,17 +1,6 @@
 # microbiotaPair
 
-[![Build
-Status](https://travis-ci.org/ropensci/taxa.svg?branch=master)](https://travis-ci.org/ropensci/taxa)
-[![cran
-checks](https://cranchecks.info/badges/worst/taxa)](https://cranchecks.info/pkgs/taxa)
-[![codecov](https://codecov.io/gh/ropensci/taxa/branch/master/graph/badge.svg)](https://codecov.io/gh/ropensci/taxa)
-[![Project Status: WIP - Initial development is in progress, but there
-has not yet been a stable, usable release suitable for the
-public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
-[![rstudio mirror
-downloads](http://cranlogs.r-pkg.org/badges/taxa)](https://github.com/metacran/cranlogs.app)
-[![cran
-version](http://www.r-pkg.org/badges/version/taxa)](https://cran.r-project.org/package=microbitaPair)
+
 
 `microbiotaPair` defines microbiota study to Pair sample. The
 goal is to  Simplified Microbiome Analysis Workflows  on Intervention Study
@@ -22,7 +11,7 @@ There are two distinct types of classes in `taxa`:
 Contributors
 ------------
 
--   [Scott Chamberlain](https://github.com/sckott)
+-   [Huahui Ren](https://github.com/rusher321)
 -   [Zachary Foster](https://github.com/zachary-foster)
 
 Comments and contributions
