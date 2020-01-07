@@ -12,7 +12,7 @@ Contributors
 ------------
 
 -   [Huahui Ren](https://github.com/rusher321)
--   [Zachary Foster](https://github.com/zachary-foster)
+-   [Hua Zout](https://github.com/zouhua)
 
 Comments and contributions
 --------------------------
