@@ -1,0 +1,19 @@
+Package: microbiotaPair
+Version: 0.0.0
+Date: 2020-01-7
+Title: An R Package for Simplified Microbiome Analysis Workflows 
+      on Intervention Study 
+Author: Huahui Ren
+Maintainer: Huahui Ren <renhuahui@genomics.cn>
+Depends: R (>= 3.1.0)
+Imports:
+Suggests:
+Description: An R Package for Simplified Microbiome Analysis Workflows 
+      on Intervention Study
+License: GPL
+URL: https://github.com/pzhao/rmickey
+BugReports: https://github.com/pzhao/rmickey/issues
+VignetteBuilder: knitr
+RoxygenNote: 7.0.0
+NeedsCompilation: no
+Packaged: 2020-01-01 09:53:27 UTC; pz
