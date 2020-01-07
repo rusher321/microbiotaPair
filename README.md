@@ -11,7 +11,7 @@ public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus
 [![rstudio mirror
 downloads](http://cranlogs.r-pkg.org/badges/taxa)](https://github.com/metacran/cranlogs.app)
 [![cran
-version](http://www.r-pkg.org/badges/version/taxa)](https://cran.r-project.org/package=taxa)
+version](http://www.r-pkg.org/badges/version/taxa)](https://cran.r-project.org/package=microbitaPair)
 
 `microbiotaPair` defines microbiota study to Pair sample. The
 goal is to  Simplified Microbiome Analysis Workflows  on Intervention Study
