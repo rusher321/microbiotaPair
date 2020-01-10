@@ -1,4 +1,9 @@
-#' Wilcoxon Sign-Rank Test
+#' @import dplyr
+#' @importFrom tibble column_to_rownames rownames_to_column
+#' @importFrom varhandle unfactor
+#'
+#'
+#' @title Wilcoxon Sign-Rank Test
 #'
 #' @description
 #' Tests for the difference between two related variables; takes into account the magnitude and direction of difference

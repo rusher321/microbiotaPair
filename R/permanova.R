@@ -1,4 +1,10 @@
-#' Permutational Multivariate Analysis of Variance Using Distance Matrices
+#' @import dplyr
+#' @importFrom vegan vegdist adonis
+#' @importFrom tibble column_to_rownames rownames_to_column
+#' @importFrom varhandle unfactor
+#'
+#'
+#' @title Permutational Multivariate Analysis of Variance Using Distance Matrices
 #'
 #' @description PERMANOVA1
 #' The aim of PERMANOVA1 function is to asess the association between the overall profile and phenotype
