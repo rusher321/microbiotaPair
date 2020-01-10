@@ -1,20 +1,21 @@
-#' A brief introduction to this function.
+#' Permutational Multivariate Analysis of Variance Using Distance Matrices
 #'
 #' @description PERMANOVA1
 #' The aim of PERMANOVA1 function is to asess the association between the overall profile and phenotype
 #' @details 09/01/2020  ShenZhen China
 #' @author  Hua Zou
 #' @param x x is phenotype cantains the subjects' characteristic;
-#' @param y y is the overall profile
+#' @param y y is the overall profile, colnames are samplenames, rownames are mearsures;
+#' @param tag which connect x and y.
 #'
-#' @usage PERMANOVA1(x, y)
-#' @examples  result <- PERMANOVA1(phen, spf)
+#' @usage PERMANOVA1(x, y, tag)
+#' @examples  result <- PERMANOVA1(phen, spf, tag="SampleID")
 #'
 #' @return  Return the F test result
+#'
 #' @export
 #'
-
-PERMANOVA1 <- function(x, y) {
+PERMANOVA1 <- function(x, y, tag) {
 
   # install_suggest_packages <- function(packages_name_list = c("randomForest")){
   #   usePackage <- function(p) {
@@ -24,18 +25,23 @@ PERMANOVA1 <- function(x, y) {
   #   }
   #   invisible(lapply(packages_name_list, usePackage))
   # }
-  #
-  # install_suggest_packages(c("dplyr", "vegan"))
+  # packages_list <- c("dplyr", "vegan", "varhandle")
+  # install_suggest_packages(packages_list)
   #
   # library(devtools)
   # library(roxygen2)
   # library(dplyr)
+  # library(vegan)
   #
-  # phen <- read.csv("data/phen.csv")
-  # spf <- read.table("data/Species.profile")
-  # amf <- read.table("data/Amino.profile")
+  # phen <- read.csv("inst/phen.csv")
+  # spf <- read.table("inst/Species.profile")
+  # amf <- read.table("inst/Amino.profile")
+  # x <- phen
+  # y <- spf
+  # tag <- "SampleID"
   # use_data(phen, spf, amf)
 
+  colnames(x)[which(colnames(x) == tag) ] <- "SampleID"
   sid <- intersect(as.character(x$SampleID), colnames(y))
   phe <- x %>% filter(SampleID %in% sid)
   prf <-  y %>% select(as.character(phe$SampleID)) %>%
@@ -51,9 +57,9 @@ PERMANOVA1 <- function(x, y) {
       datphe <- as.factor(datphe)
     }
     datprf <- dat[, -1, F]
-    dis <- vegdist(datprf, method = "bray")
+    dis <- vegan::vegdist(datprf, method = "bray")
     set.seed(123)
-    ad <- adonis(dis ~ datphe, permutations = 1000)
+    ad <- vegan::adonis(dis ~ datphe, permutations = 1000)
     tmp <- as.data.frame(ad$aov.tab) %>% slice(1)
     res <- c(length(datphe), as.numeric(tmp[, c(1:6)]))
     return(res)

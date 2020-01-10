@@ -12,3 +12,4 @@ import(vegan)
 
 # export function from our R directory
 export(PERMANOVA1)
+export(wilcox_sign)

@@ -2,14 +2,16 @@
 % Please edit documentation in R/permanova.R
 \name{PERMANOVA1}
 \alias{PERMANOVA1}
-\title{A brief introduction to this function.}
+\title{Permutational Multivariate Analysis of Variance Using Distance Matrices}
 \usage{
-PERMANOVA1(x, y)
+PERMANOVA1(x, y, tag)
 }
 \arguments{
 \item{x}{x is phenotype cantains the subjects' characteristic;}
 
-\item{y}{y is the overall profile}
+\item{y}{y is the overall profile, colnames are samplenames, rownames are mearsures;}
+
+\item{tag}{which connect x and y.}
 }
 \value{
 Return the F test result
@@ -22,7 +24,7 @@ The aim of PERMANOVA1 function is to asess the association between the overall p
 09/01/2020  ShenZhen China
 }
 \examples{
- result <- PERMANOVA1(phen, spf)
+ result <- PERMANOVA1(phen, spf, tag="SampleID")
 
 }
 \author{
