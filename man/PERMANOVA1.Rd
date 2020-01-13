@@ -4,27 +4,28 @@
 \alias{PERMANOVA1}
 \title{Permutational Multivariate Analysis of Variance Using Distance Matrices}
 \usage{
-PERMANOVA1(x, y, tag)
+PERMANOVA1(physeq, sampleid)
 }
 \arguments{
-\item{x}{x is phenotype cantains the subjects' characteristic;}
+\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
+sample data including the measured variables and categorical information of the samples.}
 
-\item{y}{y is the overall profile, colnames are samplenames, rownames are mearsures;}
-
-\item{tag}{which connect x and y.}
+\item{sampleid}{(Required) A character of the sampleid to connect phenotype and  profiles.}
 }
 \value{
-Return the F test result
+permanova result
 }
 \description{
-PERMANOVA1
-The aim of PERMANOVA1 function is to asess the association between the overall profile and phenotype
+PERMANOVA1 The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
 }
 \details{
 09/01/2020  ShenZhen China
 }
 \examples{
- result <- PERMANOVA1(phen, spf, tag="SampleID")
+
+data(physeq_data)
+sampleid <- "SampleID"
+PERMANOVA1(physeq_data, sampleid)
 
 }
 \author{

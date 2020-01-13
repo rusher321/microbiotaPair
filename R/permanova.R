@@ -6,51 +6,36 @@
 #'
 #' @title Permutational Multivariate Analysis of Variance Using Distance Matrices
 #'
-#' @description PERMANOVA1
-#' The aim of PERMANOVA1 function is to asess the association between the overall profile and phenotype
+#' @description PERMANOVA1 The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
 #' @details 09/01/2020  ShenZhen China
 #' @author  Hua Zou
-#' @param x x is phenotype cantains the subjects' characteristic;
-#' @param y y is the overall profile, colnames are samplenames, rownames are mearsures;
-#' @param tag which connect x and y.
+#' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
+#'        sample data including the measured variables and categorical information of the samples.
+#' @param sampleid (Required) A character of the sampleid to connect phenotype and  profiles.
 #'
-#' @usage PERMANOVA1(x, y, tag)
-#' @examples  result <- PERMANOVA1(phen, spf, tag="SampleID")
+#' @usage PERMANOVA1(physeq, sampleid)
+#' @examples
 #'
-#' @return  Return the F test result
+#' data(physeq_data)
+#' sampleid <- "SampleID"
+#' PERMANOVA1(physeq_data, sampleid)
+#'
+#' @return  permanova result
 #'
 #' @export
 #'
-PERMANOVA1 <- function(x, y, tag) {
+PERMANOVA1 <- function(physeq, sampleid) {
 
-  # install_suggest_packages <- function(packages_name_list = c("randomForest")){
-  #   usePackage <- function(p) {
-  #     if (!is.element(p, installed.packages()[, 1]))
-  #       install.packages(p, dep=TRUE, repos="https://mirrors.tuna.tsinghua.edu.cn/CRAN/")
-  #     suppressWarnings(suppressMessages(invisible(require(p, character.only=TRUE))))
-  #   }
-  #   invisible(lapply(packages_name_list, usePackage))
-  # }
-  # packages_list <- c("dplyr", "vegan", "varhandle")
-  # install_suggest_packages(packages_list)
-  #
-  # library(devtools)
-  # library(roxygen2)
-  # library(dplyr)
-  # library(vegan)
-  #
-  # phen <- read.csv("inst/phen.csv")
-  # spf <- read.table("inst/Species.profile")
-  # amf <- read.table("inst/Amino.profile")
-  # x <- phen
-  # y <- spf
-  # tag <- "SampleID"
-  # use_data(phen, spf, amf)
+  # load("data/physeq_data.rda")
+  # sampleid <- "sampleID"
 
-  colnames(x)[which(colnames(x) == tag) ] <- "SampleID"
-  sid <- intersect(as.character(x$SampleID), colnames(y))
-  phe <- x %>% filter(SampleID %in% sid)
-  prf <-  y %>% select(as.character(phe$SampleID)) %>%
+  phen <- microbiome::meta(physeq)
+  prof <- microbiome::abundances(physeq) %>% data.frame()
+
+  colnames(phen)[which(colnames(phen) == sampleid) ] <- "SampleID"
+  sid <- intersect(rownames(phen), colnames(prof))
+  phe <- phen[rownames(phen)%in%sid, ]
+  prf <-  prof %>% select(rownames(phe)) %>%
     t() %>% data.frame()
   per <- apply(phe %>% select(-one_of("SampleID")), 2, function(a, pf){
     dat <- data.frame(value = a, pf)

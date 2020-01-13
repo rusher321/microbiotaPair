@@ -11,16 +11,27 @@
 #' @details 01/10/2020 ShenZhen China
 #' @author  Hua Zou
 #'
-#' @param x x is data.frame with sampleID and group; sampleID connected to y
-#' @param y y is table rownames->taxonomy; colnames->sampleID
-#' @param DNAID names of sampleID to connect x and y
-#' @param PID   id for paired test
-#' @param GROUP names of group information, only contain two levels if grp1 or grp2 haven't been provided
-#' @param grp1  one of groups to be converted into 0
-#' @param grp2  one of groups to be converted into 1
+#' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
+#'        sample data including the measured variables and categorical information of the samples.
+#' @param sampleid (Required) A character of the sampleid to connect phenotype and  profiles.
+#' @param PID   id (Required) for paired test
+#' @param GROUP names (Required) of group information, only contain two levels if grp1 or grp2 haven't been provided
+#' @param grp1  one of groups to be converted into 0 (optional)
+#' @param grp2  one of groups to be converted into 1 (optional)
 #'
-#' @usage wilcox_sign(x, y, DNAID, PID, GROUP, grp1=NULL, grp2=NULL)
-#' @examples result <- wilcox_sign(phen, spf, "SampleID", "ID", "Stage", "Before", "After")
+#' @usage wilcox_sign(physeq, sampleid, PID, GROUP, grp1, grp2)
+#' @examples
+#'
+#' data(physeq_data)
+#' sampleid <- "SampleID"
+#' pid <- "ID"
+#' group <- "Stage"
+#' grp1 <- "Before"
+#' grp2 <- "After"
+#'
+#' wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
+#'
+#'
 #' @return  Returns a result of Wilcoxon Sign-Rank Test
 #' @return  type:       kind of data
 #' @return  Block:      group information
@@ -36,11 +47,14 @@
 #'
 #' @export
 #'
-wilcox_sign <- function(x, y, DNAID, PID, GROUP,
+wilcox_sign <- function(physeq, DNAID, PID, GROUP,
                         grp1=NULL, grp2=NULL){
 
+  phen <- microbiome::meta(physeq)
+  prof <- microbiome::abundances(physeq) %>% data.frame()
+
+  phe <- phen %>% select(DNAID, PID, GROUP)
   # determine x with two cols and names are corret
-  phe <- x %>% select(DNAID, PID, GROUP)
   colnames(phe)[which(colnames(phe) == DNAID)] <- "SampleID"
   colnames(phe)[which(colnames(phe) == PID)] <- "ID"
   colnames(phe)[which(colnames(phe) == GROUP)] <- "Stage"
@@ -66,7 +80,7 @@ wilcox_sign <- function(x, y, DNAID, PID, GROUP,
 
   # profile
   sid <- intersect(phe.cln$SampleID, colnames(y))
-  prf <- y %>% select(sid) %>%
+  prf <- prof %>% select(sid) %>%
     rownames_to_column("tmp") %>%
     # occurrence of rows more than 0.3
     filter(apply(select(., -one_of("tmp")), 1, function(x){sum(x[!is.na(x)] != 0)/length(x)}) > 0.3) %>%

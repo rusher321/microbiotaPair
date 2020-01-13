@@ -4,22 +4,21 @@
 \alias{wilcox_sign}
 \title{Wilcoxon Sign-Rank Test}
 \usage{
-wilcox_sign(x, y, DNAID, PID, GROUP, grp1=NULL, grp2=NULL)
+wilcox_sign(physeq, sampleid, PID, GROUP, grp1, grp2)
 }
 \arguments{
-\item{x}{x is data.frame with sampleID and group; sampleID connected to y}
+\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
+sample data including the measured variables and categorical information of the samples.}
 
-\item{y}{y is table rownames->taxonomy; colnames->sampleID}
+\item{PID}{id (Required) for paired test}
 
-\item{DNAID}{names of sampleID to connect x and y}
+\item{GROUP}{names (Required) of group information, only contain two levels if grp1 or grp2 haven't been provided}
 
-\item{PID}{id for paired test}
+\item{grp1}{one of groups to be converted into 0 (optional)}
 
-\item{GROUP}{names of group information, only contain two levels if grp1 or grp2 haven't been provided}
+\item{grp2}{one of groups to be converted into 1 (optional)}
 
-\item{grp1}{one of groups to be converted into 0}
-
-\item{grp2}{one of groups to be converted into 1}
+\item{sampleid}{(Required) A character of the sampleid to connect phenotype and  profiles.}
 }
 \value{
 Returns a result of Wilcoxon Sign-Rank Test
@@ -53,7 +52,17 @@ Tests for the difference between two related variables; takes into account the m
 01/10/2020 ShenZhen China
 }
 \examples{
-result <- wilcox_sign(phen, spf, "SampleID", "ID", "Stage", "Before", "After")
+
+data(physeq_data)
+sampleid <- "SampleID"
+pid <- "ID"
+group <- "Stage"
+grp1 <- "Before"
+grp2 <- "After"
+
+wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
+
+
 }
 \author{
 Hua Zou

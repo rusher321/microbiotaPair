@@ -30,4 +30,5 @@ Imports:
     varhandle (>= 2.0.3),
     vegan (>= 2.5-6),
     microbiome (>= 1.8.0),
-    phyloseq (>= 1.30.0)
+    phyloseq (>= 1.30.0),
+    data.table (>= 1.12.8)
