@@ -2,12 +2,9 @@
 % Please edit documentation in R/plot_alpha_diversity.R
 \name{plot_alpha_diversity}
 \alias{plot_alpha_diversity}
-\title{Plot alpha diversity
-This function calculates alpha diversity of provided community data using
-selected method(s). It performs pair-wise ANOVA of diversity measures between groups
-and outputs a plot for each of the selected methods(indices) annotated with significance levels.}
+\title{Plot alpha diversity}
 \usage{
-plot_alpha_diversity(physeq, method, treat, pid)
+plot_alpha_diversity(physeq, method, grouping_column, pid)
 }
 \arguments{
 \item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
@@ -16,7 +13,7 @@ sample data including the measured variables and categorical information of the 
 \item{method}{(Required). A list of character strings specifying \code{method} to be used to calculate for alpha diversity
 in the data. Available methods are: "observed", "chao1", "simpson", "shannon", "evenness" and "all".}
 
-\item{treat}{(Required). A character string specifying the name of a categorical variable containing grouping information.}
+\item{grouping_column}{(Required). A character string specifying the name of a categorical variable containing grouping information.}
 
 \item{pid}{(Required) A character string for paired test}
 }
@@ -24,7 +21,6 @@ in the data. Available methods are: "observed", "chao1", "simpson", "shannon", "
 Returns a ggplot object
 }
 \description{
-Plot alpha diversity
 This function calculates alpha diversity of provided community data using
 selected method(s). It performs pair-wise ANOVA of diversity measures between groups
 and outputs a plot for each of the selected methods(indices) annotated with significance levels.
@@ -37,9 +33,9 @@ library(dplyr)
 library(ggplot2)
 data(physeq_data)
 method <- c("shannon", "simpson")
-treat <- "Stage"
+grouping_column <- "Stage"
 pid <- "ID"
-plot_alpha_diversity(physeq_data, method, treat, pid)
+plot_alpha_diversity(physeq_data, method, grouping_column, pid)
 
 }
 \author{

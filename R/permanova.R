@@ -6,7 +6,7 @@
 #'
 #' @title Permutational Multivariate Analysis of Variance Using Distance Matrices
 #'
-#' @description PERMANOVA1 The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
+#' @description The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
 #' @details 09/01/2020  ShenZhen China
 #' @author  Hua Zou
 #' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,

@@ -32,4 +32,5 @@ Imports:
     microbiome (>= 1.8.0),
     phyloseq (>= 1.30.0),
     data.table (>= 1.12.8),
-    microbiomeSeq (>= 0.1)
+    microbiomeSeq (>= 0.1),
+    tsnemicrobiota (>= 0.1.0)

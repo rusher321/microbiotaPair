@@ -5,44 +5,44 @@
 #'
 #'
 #' @title Plot alpha diversity
-#' This function calculates alpha diversity of provided community data using
+#' @description This function calculates alpha diversity of provided community data using
 #' selected method(s). It performs pair-wise ANOVA of diversity measures between groups
 #' and outputs a plot for each of the selected methods(indices) annotated with significance levels.
+#'
 #' @details 14/01/2020  ShenZhen China
 #' @author  Hua Zou
 #' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
 #'        sample data including the measured variables and categorical information of the samples.
 #' @param method (Required). A list of character strings specifying \code{method} to be used to calculate for alpha diversity
 #'        in the data. Available methods are: "observed", "chao1", "simpson", "shannon", "evenness" and "all".
-#' @param treat (Required). A character string specifying the name of a categorical variable containing grouping information.
+#' @param grouping_column (Required). A character string specifying the name of a categorical variable containing grouping information.
 #' @param pid (Required) A character string for paired test
 #'
-#' @usage plot_alpha_diversity(physeq, method, treat, pid)
+#' @usage plot_alpha_diversity(physeq, method, grouping_column, pid)
 #' @examples
 #' library(dplyr)
 #' library(ggplot2)
 
 #' data(physeq_data)
 #' method <- c("shannon", "simpson")
-#' treat <- "Stage"
+#' grouping_column <- "Stage"
 #' pid <- "ID"
-#' plot_alpha_diversity(physeq_data, method, treat, pid)
+#' plot_alpha_diversity(physeq_data, method, grouping_column, pid)
 #'
 #' @return  Returns a ggplot object
 #'
 #' @export plot_alpha_diversity
 #'
-plot_alpha_diversity <- function(physeq, method, treat, pid){
+plot_alpha_diversity <- function(physeq, method, grouping_column, pid){
 
   abund_table <- phyloseq::otu_table(physeq)
   meta_table <- phyloseq::sample_data(physeq)
   div.df <- microbiotaPair::alpha_diversity(physeq, method) %>%
     tidyr::gather(key="measure", value=value, -sample)
 
-  df <- data.frame(div.df, (meta_table[, c(treat, pid)])[as.character(div.df$sample),])
+  df <- data.frame(div.df, (meta_table[, c(grouping_column, pid)])[as.character(div.df$sample),])
 
-
-  pr <- levels(df[, treat])
+  pr <- levels(df[, grouping_column])
   cmp <- NULL
   for(i in 1:(length(pr) -1 )){
     for(j in (i+1):length(pr)){
@@ -55,10 +55,10 @@ plot_alpha_diversity <- function(physeq, method, treat, pid){
     }
   }
 
-  anova_res <- microbiomeSeq::perform_anova(df, meta_table, treat, 1)
+  anova_res <- microbiomeSeq::perform_anova(df, meta_table, grouping_column, 1)
   df_pw <- anova_res$df_pw
 
-  df <- df %>% dplyr::rename("Group"=treat) %>% mutate(Group=factor(Group, levels = rev(pr)))
+  df <- df %>% dplyr::rename("Group"=grouping_column) %>% mutate(Group=factor(Group, levels = rev(pr)))
   p <- ggplot(df,
               aes(x = Group, y = value)) +
     stat_boxplot(geom = "errorbar",width = 0.15) +
