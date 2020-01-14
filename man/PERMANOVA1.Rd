@@ -16,7 +16,7 @@ sample data including the measured variables and categorical information of the 
 permanova result
 }
 \description{
-PERMANOVA1 The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
+The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
 }
 \details{
 09/01/2020  ShenZhen China

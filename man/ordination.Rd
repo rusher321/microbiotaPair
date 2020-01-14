@@ -4,15 +4,13 @@
 \alias{ordination}
 \title{Ordination and beta dispersion}
 \usage{
-ordination(
-  physeq,
-  which_distance = "bray",
-  method = "PCoA",
-  grouping_column,
-  pvalue.cutoff = 0.05
-)
+ordination(physeq, method, grouping_column)
 }
 \arguments{
+\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
+taxonomic assignment, sample data including the measured variables and categorical information
+of the samples, and / or phylogenetic tree if available.}
+
 \item{which_distance}{(Optional). A string character specifying dissimilarity index to be used in calculating pairwise distances (Default index is "bray".).
 "unifrac","wunifrac","manhattan", "euclidean", "canberra", "bray", "kulczynski", "jaccard", "gower", "altGower",
 "morisita", "horn", "mountford", "raup" , "binomial", "chao", "cao" or "mahalanobis".}
@@ -23,10 +21,6 @@ of \code{phyloseq} are acceptable here as well ( Default is "PCOA").
 
 \item{grouping_column}{(Required). Character string specifying name of a categorical variable that is preffered for grouping the information.
 information.}
-
-\item{physeq(Required).}{A \code{phyloseq} object containing merged information of abundance,
-taxonomic assignment, sample data including the measured variables and categorical information
-of the samples, and / or phylogenetic tree if available.}
 }
 \value{
 Returns a list of three items: \itemize{
