@@ -29,16 +29,16 @@ PERMANOVA1 <- function(physeq, sampleid) {
   # load("data/physeq_data.rda")
   # sampleid <- "sampleID"
 
-  phen <- microbiome::meta(physeq)
+  phen <- microbiome::meta(physeq) %>% tibble::rownames_to_column("SampleID")
   prof <- microbiome::abundances(physeq) %>% data.frame()
 
   colnames(phen)[which(colnames(phen) == sampleid) ] <- "SampleID"
-  sid <- intersect(rownames(phen), colnames(prof))
-  phe <- phen[rownames(phen)%in%sid, ]
-  prf <-  prof %>% select(rownames(phe)) %>%
+  sid <- intersect(phen$SampleID, colnames(prof))
+  phe <- phen[phen$SampleID%in%sid, ]
+  prf <-  prof %>% select(phen$SampleID) %>%
     t() %>% data.frame()
-  per <- apply(phe %>% select(-one_of("SampleID")), 2, function(a, pf){
-    dat <- data.frame(value = a, pf)
+  per <- apply(phe %>% select(-one_of("SampleID")), 2, function(x, pf){
+    dat <- data.frame(value = x, pf)
     datphe <- dat$value %>% varhandle::unfactor()
     if (length(datphe) == 0 | unique(datphe) == 1) {
       res <- data.frame(length(datphe), rep(NA, 6))

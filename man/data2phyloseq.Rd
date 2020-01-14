@@ -25,7 +25,19 @@ Convert all the variate such as phenotype metadata and the relative abundance pr
 13/01/2020  ShenZhen China
 }
 \examples{
-vignettes/example-data2phyloseq.R
+library(phyloseq)
+library(dplyr)
+library(data.table)
+library(tibble)
+
+
+x <- read.csv(system.file("extdata", "phenotype.csv", package="microbiotaPair"))
+y <- fread(system.file("extdata", "metabolic.profile", package="microbiotaPair"))
+z <- fread(system.file("extdata", "abundance.profile", package="microbiotaPair"))
+sampleid <- "SampleID"
+
+physeq_data <- data2phyloseq(x, y, z, sampleid)
+print(physeq_data)
 
 }
 \author{

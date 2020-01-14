@@ -28,8 +28,8 @@
 #' group <- "Stage"
 #' grp1 <- "Before"
 #' grp2 <- "After"
-#'
-#' wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
+
+#' result <- wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
 #'
 #'
 #' @return  Returns a result of Wilcoxon Sign-Rank Test
@@ -50,17 +50,17 @@
 wilcox_sign <- function(physeq, DNAID, PID, GROUP,
                         grp1=NULL, grp2=NULL){
 
-  phen <- microbiome::meta(physeq)
+  phen <- microbiome::meta(physeq) %>% tibble::rownames_to_column(DNAID)
   prof <- microbiome::abundances(physeq) %>% data.frame()
 
-  phe <- phen %>% select(DNAID, PID, GROUP)
   # determine x with two cols and names are corret
-  colnames(phe)[which(colnames(phe) == DNAID)] <- "SampleID"
-  colnames(phe)[which(colnames(phe) == PID)] <- "ID"
-  colnames(phe)[which(colnames(phe) == GROUP)] <- "Stage"
-  if (length(which(colnames(phe)%in%c("SampleID","ID","Stage"))) != 3){
+  colnames(phen)[which(colnames(phen) == DNAID)] <- "SampleID"
+  colnames(phen)[which(colnames(phen) == PID)] <- "ID"
+  colnames(phen)[which(colnames(phen) == GROUP)] <- "Stage"
+  if (length(which(colnames(phen)%in%c("SampleID","ID","Stage"))) != 3){
     warning("x without 2 cols: DNAID, ID, GROUP")
   }
+  phe <- phen %>% select(c("SampleID", "ID", "Stage"))
 
   # select groups
   if(length(grp1)){
@@ -79,7 +79,7 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
   }
 
   # profile
-  sid <- intersect(phe.cln$SampleID, colnames(y))
+  sid <- intersect(phe.cln$SampleID, colnames(prof))
   prf <- prof %>% select(sid) %>%
     rownames_to_column("tmp") %>%
     # occurrence of rows more than 0.3

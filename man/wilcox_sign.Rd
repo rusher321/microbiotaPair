@@ -59,8 +59,7 @@ pid <- "ID"
 group <- "Stage"
 grp1 <- "Before"
 grp2 <- "After"
-
-wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
+result <- wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
 
 
 }
