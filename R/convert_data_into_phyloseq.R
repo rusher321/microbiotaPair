@@ -19,7 +19,6 @@
 #' library(data.table)
 #' library(tibble)
 #'
-#'
 #' x <- read.csv(system.file("extdata", "phenotype.csv", package="microbiotaPair"))
 #' y <- fread(system.file("extdata", "metabolic.profile", package="microbiotaPair"))
 #' z <- fread(system.file("extdata", "abundance.profile", package="microbiotaPair"))
@@ -30,15 +29,10 @@
 #'
 #' @return A phyloseq object
 #'
-#' @export
+#' @export data2phyloseq
 #'
 
 data2phyloseq <- function(x, y, z, sampleid="SampleID"){
-
-  # x=read.csv("temp/phen.csv")
-  # y=fread("temp/Amino.profile")
-  # z=fread("temp/Species.profile")
-  # sampleid="SampleID"
 
   colnames(x)[which(colnames(x) == sampleid)] <- "Sample"
   meta <- y %>% column_to_rownames("V1") %>%
