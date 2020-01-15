@@ -59,8 +59,7 @@ plot_alpha_diversity <- function(physeq, method, grouping_column, pid){
   df_pw <- anova_res$df_pw
 
   df <- df %>% dplyr::rename("Group"=grouping_column) %>% mutate(Group=factor(Group, levels = rev(pr)))
-  p <- ggplot(df,
-              aes(x = Group, y = value)) +
+  p <- ggplot(df, aes(x = Group, y = value)) +
     stat_boxplot(geom = "errorbar",width = 0.15) +
     geom_boxplot(aes(fill = Group), width = 0.4,
                  outlier.colour = "black", outlier.shape = 21, outlier.size = 1) +

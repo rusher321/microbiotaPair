@@ -35,7 +35,13 @@
 #'
 plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID="ID"){
 
-  sol <- ordination.res$solution
+  if(method == "Tsne"){
+    temp <- data.frame(ordination.res$solution$tsne$par)
+    rownames(temp) <- ordination.res$solution$names
+    sol <- list(solution = temp)
+  }else{
+    sol <- ordination.res$solution
+  }
   adn_res <- ordination.res$adonis_res
   betadisper_res <- ordination.res$betadispersion
 
@@ -81,7 +87,7 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
     #annotate plot with stress value from NMDS results
     stress.value <- sol$stress
     stress.label <- paste("STRESS=",round(stress.value,4))
-    p <- p +     p2 <- p + annotate("text", x = max(df_mdat$Axis1),
+    p <- p + annotate("text", x = max(df_mdat$Axis1),
                                     y = max(df_mdat$Axis2),
                                     label = stress.label)
     p <- p + xlab("NMDS1")+ ylab("NMDS2")
@@ -89,6 +95,8 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
     eig_var <- (ord.res$solution$eig[1:2]/sum(ord.res$solution$eig))*100
     p <- p + xlab(paste("PCoA1 (",sprintf("%.4g", eig_var[1]),"%)",sep="")) +
              ylab(paste("PCoA2 (",sprintf("%.4g",eig_var[2]),"%)",sep=""))
+  }else if(method == "Tsne"){
+    p <- p + xlab("Tsne1")+ ylab("Tsne2")
   }
 
   #add the adonis results on the plot using custom annoatation
