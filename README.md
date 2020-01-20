@@ -5,7 +5,7 @@
 `microbiotaPair` defines microbiota study to Pair sample. The
 goal is to  Simplified Microbiome Analysis Workflows  on Intervention Study
 
-There are two distinct types of classes in `taxa`:
+
 
 
 Contributors
