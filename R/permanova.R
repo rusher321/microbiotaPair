@@ -1,47 +1,44 @@
-#' A brief introduction to this function.
+#' @import dplyr
+#' @importFrom vegan vegdist adonis
+#' @importFrom tibble column_to_rownames rownames_to_column
+#' @importFrom varhandle unfactor
 #'
-#' @description PERMANOVA1
-#' The aim of PERMANOVA1 function is to asess the association between the overall profile and phenotype
+#'
+#' @title Permutational Multivariate Analysis of Variance Using Distance Matrices
+#'
+#' @description The PERMANOVA1 aimed to assess the association between the overall profile and phenotype
 #' @details 09/01/2020  ShenZhen China
 #' @author  Hua Zou
-#' @param x x is phenotype cantains the subjects' characteristic;
-#' @param y y is the overall profile
+#' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
+#'        sample data including the measured variables and categorical information of the samples.
+#' @param sampleid (Required) A character of the sampleid to connect phenotype and  profiles.
 #'
-#' @usage PERMANOVA1(x, y)
-#' @examples  result <- PERMANOVA1(phen, spf)
+#' @usage PERMANOVA1(physeq, sampleid)
+#' @examples
 #'
-#' @return  Return the F test result
+#' data(physeq_data)
+#' sampleid <- "SampleID"
+#' PERMANOVA1(physeq_data, sampleid)
+#'
+#' @return  permanova result
+#'
 #' @export
 #'
+PERMANOVA1 <- function(physeq, sampleid) {
 
-PERMANOVA1 <- function(x, y) {
+  # load("data/physeq_data.rda")
+  # sampleid <- "sampleID"
 
-  # install_suggest_packages <- function(packages_name_list = c("randomForest")){
-  #   usePackage <- function(p) {
-  #     if (!is.element(p, installed.packages()[, 1]))
-  #       install.packages(p, dep=TRUE, repos="https://mirrors.tuna.tsinghua.edu.cn/CRAN/")
-  #     suppressWarnings(suppressMessages(invisible(require(p, character.only=TRUE))))
-  #   }
-  #   invisible(lapply(packages_name_list, usePackage))
-  # }
-  #
-  # install_suggest_packages(c("dplyr", "vegan"))
-  #
-  # library(devtools)
-  # library(roxygen2)
-  # library(dplyr)
-  #
-  # phen <- read.csv("data/phen.csv")
-  # spf <- read.table("data/Species.profile")
-  # amf <- read.table("data/Amino.profile")
-  # use_data(phen, spf, amf)
+  phen <- microbiome::meta(physeq) %>% tibble::rownames_to_column("SampleID")
+  prof <- microbiome::abundances(physeq) %>% data.frame()
 
-  sid <- intersect(as.character(x$SampleID), colnames(y))
-  phe <- x %>% filter(SampleID %in% sid)
-  prf <-  y %>% select(as.character(phe$SampleID)) %>%
+  colnames(phen)[which(colnames(phen) == sampleid) ] <- "SampleID"
+  sid <- intersect(phen$SampleID, colnames(prof))
+  phe <- phen[phen$SampleID%in%sid, ]
+  prf <-  prof %>% select(phen$SampleID) %>%
     t() %>% data.frame()
-  per <- apply(phe %>% select(-one_of("SampleID")), 2, function(a, pf){
-    dat <- data.frame(value = a, pf)
+  per <- apply(phe %>% select(-one_of("SampleID")), 2, function(x, pf){
+    dat <- data.frame(value = x, pf)
     datphe <- dat$value %>% varhandle::unfactor()
     if (length(datphe) == 0 | unique(datphe) == 1) {
       res <- data.frame(length(datphe), rep(NA, 6))
@@ -51,9 +48,9 @@ PERMANOVA1 <- function(x, y) {
       datphe <- as.factor(datphe)
     }
     datprf <- dat[, -1, F]
-    dis <- vegdist(datprf, method = "bray")
+    dis <- vegan::vegdist(datprf, method = "bray")
     set.seed(123)
-    ad <- adonis(dis ~ datphe, permutations = 1000)
+    ad <- vegan::adonis(dis ~ datphe, permutations = 1000)
     tmp <- as.data.frame(ad$aov.tab) %>% slice(1)
     res <- c(length(datphe), as.numeric(tmp[, c(1:6)]))
     return(res)
