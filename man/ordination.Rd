@@ -42,7 +42,7 @@ The function a solution of ordination, PERMANOVA results and beta dispersion res
 \examples{
 data(physeq_data)
 physeq <- physeq_data
-ord.res <- ordination(physeq, method="NMDS", grouping_column="Stage")
+ord.res <- ordination(physeq, method = "NMDS", grouping_column = "Stage")
 
 
 }

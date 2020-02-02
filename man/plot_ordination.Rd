@@ -31,8 +31,8 @@ This function produces visualisation of ordination and beta dispersion results.
 
 data(physeq_data)
 physeq <- physeq_data
-ord.res <- ordination(physeq, method="NMDS", grouping_column="Stage")
-plot_ordination(ord.res, method="PCoA", grouping_column="Stage", PID="ID")
+ord.res <- ordination(physeq, method = "NMDS", grouping_column = "Stage")
+plot_ordination(ord.res, method = "PCoA", grouping_column = "Stage", PID = "ID")
 
 
 }

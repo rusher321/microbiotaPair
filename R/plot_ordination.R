@@ -8,7 +8,7 @@
 #' @description This function produces visualisation of ordination and beta dispersion results.
 #'
 #' @details 14/01/2020  ShenZhen China
-#' @author  Hua Zou
+#' @author  Hua Zou; hua huiren
 #'
 #' @param ordination.res (Required).  A solution of ordination results returned from \link[microbiotaPair]{ordination}.
 #' @param method (Optional). A character string specifying ordination method. All methods available to the \code{ordinate} function
@@ -17,6 +17,8 @@
 #' @param grouping_column (Required). Character string specifying name of a categorical variable that is preffered for grouping the information.
 #'        information.
 #' @param PID   id (Required) for paired test
+#'
+#' @param time_colour  a vector include the color
 #'
 #' @return Returns a ggplot object.
 #'
@@ -33,7 +35,7 @@
 #'
 #' @export plot_ordination
 #'
-plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID="ID"){
+plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID="ID" , time_colour = NULL){
 
   if(method == "Tsne"){
     temp <- data.frame(ordination.res$solution$tsne$par)
@@ -53,12 +55,16 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
                         by = "sample")
 
   #coloring function
-  gg_color_hue <- function(n){
-    hues <- seq(15,375,length=n+1)
-    hcl(h=hues,l=65,c=100)[1:n]
-  }
+  if(is.null(time_colour)){
+    gg_color_hue <- function(n){
+      hues <- seq(15,375,length=n+1)
+      hcl(h=hues,l=65,c=100)[1:n]
+    }
 
-  cols <- gg_color_hue(length(unique(df_mdat$grouping)))
+    cols <- gg_color_hue(length(unique(df_mdat$grouping)))
+  }else{
+    cols <- time_colour
+  }
 
   p <- ggplot(df_mdat, aes(x=Axis1, y=Axis2))+
     geom_point(aes(color = grouping))+
@@ -77,7 +83,7 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
   p <- p + geom_line(aes(group=PID), linetype = "dashed", alpha = 0.3) +
     geom_text(data = group_label, aes(x=Axis1, y=Axis2, label=grouping, color=grouping)) +
     geom_polygon(data = group_border, aes(fill = grouping), color = "black", alpha = 0.1, show.legend = FALSE)+
-    scale_color_manual(values = cols)+
+    #scale_color_manual(values = cols)+
     guides(group=F, fill=F, color=F)+
     geom_hline(yintercept = 0, linetype = "dashed")+
     geom_vline(xintercept = 0, linetype = "dashed")
@@ -115,18 +121,11 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
   }
 
   # add a table of beta dispersion results
-  if(!is.null(betadisper_res)){
-    anova_label <- NULL
-    for(i in 1:nrow(betadisper_res)){
-      tmp <- paste("groups=", betadisper_res[i, 1], " p_value=", signif(betadisper_res[i, 2], 3), " label=", betadisper_res[i, 3], sep = " ")
-      if(is.null(anova_label)){
-        anova_label <- tmp
-      }else{
-        anova_label <- paste(anova_label, tmp, sep = "\n")
-      }
-      p <- p + ggtitle(anova_label)
-    }
-
-}
   return(p)
 }
+
+
+
+
+
+

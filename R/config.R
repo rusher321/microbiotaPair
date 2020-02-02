@@ -1,8 +1,24 @@
 # set config profile
 
-group_colour <- c("#FB8072","#BEBADA")
-sample_name <- "PID"
-time_name <- "Time"
+sample_varname <- "SampleID"
+time_varname <- "Stage"
+pairID_varname <- "ID"
+
+time_name   <- c("Before", "After")
+input_micro <- "inst/extdata/abundance.profile"
+imput_metadata <- "inst/extdata/phenotype.csv"
 
 # defalut parameter
+ProjectID   <- "MicroPair"
+time_colour <- c("#FB8072","#BEBADA")
+outputDir <- "./MicroPair"
 
+mytheme <- theme_bw(base_size = 12) +
+  theme(plot.title = element_text(size = 10,color = "black", face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 10, color = "black",face = "bold"),
+        axis.text = element_text(size = 9, color = "black"), axis.ticks.length = unit(-0.05, "in"),
+        axis.text.y = element_text(margin = unit(c(0.3,0.3, 0.3, 0.3), "cm"), size = 9),
+        axis.text.x = element_text(margin = unit(c(0.3,0.3, 0.3, 0.3), "cm")),
+        text = element_text(size = 8,color = "black"),
+        strip.text = element_text(size = 9, color = "black", face = "bold"),
+        panel.grid = element_blank())
