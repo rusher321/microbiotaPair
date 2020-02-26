@@ -1,0 +1,200 @@
+#' @import igraph
+#' @import Matrix
+#' @import SpiecEasi
+#' sparcc network
+#'
+#' @param dat data.frame or matrix, row is sample ID
+#' @param cutoff numberic, the sparcc coefficient of species-species indicate
+#' the cutoff of eage
+#' @param main character, the network title
+#' @param count logistic, indicated the microbiota data is count of relative abundance
+#' @param layout character, the paremeter from the igraph indicated the network layout
+#' @param ...
+#'
+#' @return figure
+#' @export
+#'
+#' @usage sparccNet(dat = microbiota, cutoff = 0.3, main = "test", count = F)
+#' @examples
+#'
+#' library(dplyr)
+#' data("physeq_data")
+#' physeq <- physeq_data
+#' microbitota <- otu_table(phyloseq)
+#' microbitoFilter <- filterPer(microbiota, 2, 0.5)
+#' sparccNet(dat = microbiotaFilter, cutoff = 0.3, main = "test", count = "F)
+sparccNet <- function(dat, cutoff, main, count ,layout = "layout.circle",...){
+
+  # library(igraph)
+  # library(Matrix)
+  # library(SpiecEasi)
+
+  #
+  renorm <- function(dat){
+    # normlization function
+    trans <- function(x){
+      y <- x/(sum(x))
+      return(y)
+    }
+    # tran the dataframe
+    dat2 <- t(dat)
+    dat3 <- t(apply(dat2, 2, trans))
+
+    return(dat3)
+  }
+
+  # the function is count data or relative abundan
+  if(count){
+    datRenorm <- dat
+  }else{
+    datRenorm <- round(renorm(dat)*10^7)
+  }
+  basesparcc <- sparcc(datRenorm)
+  graph <- basesparcc$Cor
+  num.row <- nrow(graph)
+
+  # tran the corelation to adj matrox
+
+  for(i in 1:num.row){
+    for(j in 1:num.row){
+      a <- graph[i, j]
+      graph[i,j] <- ifelse(abs(a) >= cutoff, a, 0)
+    }
+  }
+
+  diag(graph) <- 0
+  igraph <- adj2igraph(Matrix(graph, sparse=TRUE))
+
+  # set edge color，postive correlation
+  # postive correlation is red, negative correlation is blue
+  igraph.weight = E(igraph)$weight
+  E.color = igraph.weight
+  E.color = ifelse(E.color>0, "#fc9272", ifelse(E.color<0, "#31a354","grey"))
+  E(igraph)$color = as.character(E.color)
+
+  # add the edge width
+  E(igraph)$width = abs(igraph.weight)*4
+  # add the node color
+  V(igraph)$color <- "#636363"
+  plot(igraph,
+       layout=layout,
+       vertex.label=colnames(dat),
+       main = main ,...)
+
+}
+
+
+#' pairNet
+#' Pair Networt for a specific species on 2 time point
+#'
+#' @param microbiota a data.frame object, species profile, row is sample
+#' @param metadata a data.frame object, metadata table, row is sample
+#' @param cutoff numberic, the sparcc coefficient of species-species indicate
+#' the cutoff of eage
+#' @param species charater, species names, eg "Vibrio_harveyi"
+#' @param name charater, provida a name for the specific species of treatment
+#'
+#' @return matrix
+#' @export
+#'
+#' @examples
+pairNet <- function(microbiota, metadata, cutoff, species, name){
+
+  # to compute the sparcc
+  matchname <- names(table(metadata[, pairID_varname]))[table(metadata[, pairID_varname]) == 2]
+  outconfig <- metadata[!is.na(match(metadata[, pairID_varname], matchname)), ]
+  matchdat <-  metadata[order(metadata[, pairID_varname]), ]
+  matchdat <- matchdat[order(matchdat[, time_varname]), ]
+  number <- length(matchname)
+  # to make sure the microbiota's sample ID is row
+  matchmicrobiota <- microbiota[rownames(matchdat), ]
+  matchmicrobiota <- filterPer(matchmicrobiota, row = 2, percent = 0.2)
+  g1microbiota <- round(matchmicrobiota[1:number, ]*10^7)
+  g2microbiota <- round(matchmicrobiota[(number+1):(2*number), ]*10^7)
+
+  Cor1 <- sparcc(g1microbiota)$Cor
+  Cor2 <- sparcc(g2microbiota)$Cor
+  colnames(Cor1) <- rownames(Cor1) <- rownames(Cor2) <- colnames(Cor2) <- colnames(microbiota)
+  # generate adj matrix on species
+
+  bacindex <- which(rownames(Cor1) == species)
+  retainbac <- names(Cor1[,bacindex][abs(Cor1[,bacindex])>=cutoff])
+  retainnet <- Cor1[retainbac, retainbac]
+  which(retainbac== species) -> speindex
+  retainnet[-speindex, -speindex] <- 0
+  retainnet[speindex, speindex] <- 0
+
+  bacindex2 <- which(rownames(Cor2) == species)
+  retainbac2 <- names(Cor2[,bacindex][abs(Cor2[,bacindex])>=cutoff])
+  retainnet2 <- Cor2[retainbac2, retainbac2]
+  which(retainbac2 == species) -> speindex2
+  retainnet2[-speindex2, -speindex2] <- 0
+  retainnet2[speindex2, speindex2] <- 0
+
+  rownames(retainnet2)[speindex2] <- colnames(retainnet2)[speindex2] <- paste0(species,"_C2")
+  retainbac2[speindex2] <- paste0(species, name)
+  # combine the two network
+
+  comBac <- unique(c(retainbac, retainbac2))
+  out <- matrix(0, nrow=length(comBac), ncol=length(comBac))
+  rownames(out) <- colnames(out) <- comBac
+
+  # input the corresponde value
+  pmatch(retainbac, comBac) -> netindex1
+  netindex1[speindex] -> netspindex1
+  out[netindex1, netspindex1] <- retainnet[, speindex]
+  out[netspindex1, netindex1] <- retainnet[speindex, ]
+
+  pmatch(retainbac2, comBac) -> netindex2
+  netindex2[speindex2] -> netspindex2
+  out[netindex2, netspindex2] <- retainnet2[, speindex2]
+  out[netspindex2, netindex2] <- retainnet2[speindex2, ]
+
+  return(out)
+
+}
+
+#' @import igraph
+#' @import Matrix
+#' simpleNet
+#' a simple network
+#' @param adjmatrix the pairNet result
+#' @param main the network title
+#'
+#' @return figure
+#' @export
+#'
+#' @examples
+#'
+simplenet <- function(adjmatrix, main,...){
+  #library(igraph)
+  #library(Matrix)
+
+  graph <- adjmatrix
+  num.row <- nrow(graph)
+  igraph <- adj2igraph(Matrix(graph, sparse=TRUE))
+
+  # set edge color
+  igraph.weight = E(igraph)$weight
+  E.color = igraph.weight
+  E.color = ifelse(E.color>0, "#fc9272",ifelse(E.color<0, "#31a354","grey"))
+  E(igraph)$color = as.character(E.color)
+  # set node size
+  index <- grep(main, colnames(adjmatrix))
+  nodesize <- rep(7, num.row)
+  nodesize[index] <- 15
+  V(igraph)$size <- nodesize
+
+  # add the edge width
+  E(igraph)$width = abs(igraph.weight)*4
+  # add the node color
+  #V(igraph)$color <- "#636363"
+  plot(igraph,
+       vertex.label=colnames(adjmatrix),
+       vertex.label.cex = .6,
+       vertex.label.color = "black",
+       vertex.color="lightsteelblue2",
+       vertex.frame.color="gray",
+       main = main ,...)
+
+}

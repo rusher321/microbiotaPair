@@ -1,9 +1,9 @@
 #' mantel_test
 #'
-#' @param microbiota  a data.frame object, species distance
+#' @param microbiota  a data.frame object, species profile, row is sample
 #' @param metadata  a data.frame object, metadata inf
 #' @param methodf  feature space distance method
-#' @param methods sample space distance method
+#' @param methods sample space distance method, vegdist
 #'
 #' @return
 #' figure
@@ -21,29 +21,6 @@ mantel_test <- function(microbiota,  metadata, methodf, methods){
   number <- length(matchname)
   # to make sure the microbiota's sample ID is row
   matchmicrobiota <- microbiota[rownames(matchdat), ]
-
-  # to remove low occrance feature
-  filterPer <- function (x, row, percent, include = T)
-  {
-    if (include) {
-      index <- apply(x, row, function(x) {
-        (sum(x != 0)/length(x)) > percent
-      })
-    }
-    else {
-      index <- apply(x, row, function(x) {
-        (sum(x != 0)/length(x)) < percent
-      })
-    }
-    if (row == 1) {
-      out <- x[index, ]
-    }
-    else {
-      out <- x[, index]
-    }
-    return(out)
-  }
-
   matchmicrobiota <- filterPer(matchmicrobiota, row = 2, percent = 0.2)
   g1microbiota <- matchmicrobiota[1:number, ]
   g2microbiota <- matchmicrobiota[(number+1):(2*number), ]
@@ -60,7 +37,7 @@ mantel_test <- function(microbiota,  metadata, methodf, methods){
   mantelf <- mantel(g1distf, g2distf, method = "spearman")
   sim <- mantelf$perm
   obs <- mantelf$statistic
-  mr1 <- as.randtest(sim = sim, obs = obs)
+  mr1 <- ade4::as.randtest(sim = sim, obs = obs)
   plot(mr1, main = paste0("Feature_Space p.value = ", round(mr1$pvalue, dig = 5)))
 
   # to compute the sample space
@@ -69,11 +46,9 @@ mantel_test <- function(microbiota,  metadata, methodf, methods){
   mantels <- mantel(g1dists, g2dists, method = "spearman")
   sim <- mantels$perm
   obs <- mantels$statistic
-  mr2 <- as.randtest(sim = sim, obs = obs)
+  mr2 <- ade4::as.randtest(sim = sim, obs = obs)
   plot(mr2, main = paste0("Sample_Space p.value = ", round(mr2$pvalue, dig = 5)))
 
   # libray(customLayout)
-
-
 
 }

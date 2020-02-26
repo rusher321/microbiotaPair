@@ -1,86 +1,74 @@
 #' two part compare
-#' From The Gut Microbiome Contributes to a Substantial Proportion of the Variation in Blood Lipids
-#' @param dat , microbiome data row is sample id, col is variable
-#' @param phe , metadata row is sample id ,col is variable
-#' @param response , the variable to explain
-#' @param cutoff , ensure to detect or undetect
-#' @param number , when sample number is limited , default 10
-#'
-#' @return dataframe
+#' two part (paired test & McNemar’s Chi-Square Test) to maximum the data infomation
+#' @param microbiota  a data.frame, microbiome data row is sample id, col is variable
+#' @param metadata  a data.frame, metadata row is sample id ,col is variable
+#' @param percent  numberic, 0-1, the cutoff of species occrance
+#' @return
+#' data.frame
 #' @export
 #'
 #' @examples
-two_part_compare <- function(dat , phe, response, cutoff, number=10){
-  # match the sample ID
-  id <- intersect(rownames(dat), rownames(phe))
-  if(length(id)==0){
-    stop("can't match the sample id")
-  }
-  dat <- dat[id, ]
-  y <- phe[id, response]
-  # part1 transform the matrix to 0-1
-  dat2 <- dat
-  dat2[dat2 >= cutoff] <- 1
-  dat2[dat2 < cutoff ] <- 0
+two_part_compare <- function(microbiota , metadata, percent){
+  # match the ID , get the baseline & treatment data
+  matchname <- names(table(metadata[, pairID_varname]))[table(metadata[, pairID_varname]) == 2]
+  outconfig <- metadata[!is.na(match(metadata[, pairID_varname], matchname)), ]
+  matchdat <-  metadata[order(metadata[, pairID_varname]), ]
+  # to order the varname ,keep same as the time_name
+  matchdat[, time_varname] <- factor(matchdat[, time_varname], levels = time_name)
+  matchdat <- matchdat[order(matchdat[, time_varname]), ]
+
+  number <- length(matchname)
+  # to make sure the microbiota's sample ID is row
+  matchmicrobiota <- microbiota[rownames(matchdat), ]
+
+  # to remove low occrance feature
+  matchmicrobiota <- filterPer(matchmicrobiota, row = 2, percent = percent)
+  g1microbiota <- matchmicrobiota[1:number, ]
+  g2microbiota <- matchmicrobiota[(number+1):(2*number), ]
+
+   # part1 transform the matrix to 0-1
+  g1microbiota2 <- g1microbiota
+  g2microbiota2 <- g2microbiota
+  g1microbiota2[g1microbiota2 >0] <- 1
+  g1microbiota2[g1microbiota2 == 0] <- 0
+  g2microbiota2[g2microbiota2 >0] <- 1
+  g2microbiota2[g2microbiota2 == 0] <- 0
 
   # filter all zero variable
 
-  out <- matrix(NA, nrow = ncol(dat), ncol = 3+4+4+2+2)
-  for(i in 1:ncol(dat)){
-    #print(i)
-    x <- dat2[,i]
-    out[i,1:3] <- c(sum(x==0), sum(x==1), median(dat[, i]))
-    if(sum(x==0) < number |sum(x==1) < number){   # here set the cutoff 20, maybe need the sample size to adjust
-      out[i,4:7] <- c(0, 0 , 0, 1)
-    }else{
-      res <- glm(y~x)
-      out[i,4:7] <- as.numeric(summary(res)$coefficients[2,])
-    }
-
+  out <- matrix(NA, nrow = ncol(matchmicrobiota), ncol = 5+2+3)
+  for(i in 1:ncol(matchmicrobiota)){
+    x <- g1microbiota2[,i]
+    y <- g2microbiota2[,i]
+    out[i, 1:5] <- c(length(x), sum(x==0), sum(y==0), median(g1microbiota[,i]),
+                     median(g2microbiota[,i]))
+    x <- factor(x, levels = c(0, 1))
+    y <- factor(y, levels = c(0, 1))
+    tabletmp <- table(x, y)
+    mcnemarres <- mcnemar.test(tabletmp)
+    out[i, 6:7] <- as.numeric(c(mcnemarres$statistic, mcnemarres$p.value))
   }
 
   # part2 transform the matrix log
-  dat3 <- dat
-  dat3[dat3 < cutoff] <- 0
-  dat3 <- apply(dat3, 2, log10)
-  for(i in 1:ncol(dat)){
-    # print(i)
-    x <- dat3[,i]
-    id2 <- !is.infinite(x)
-    x2 <- x[id2]
-    y2 <- y[id2]
-    if(length(x2) < number){   # here set the cutoff 20, maybe need the sample size to adjust
-      out[i,8:11] <- c(0, 0 , 0, 1)
-    }else{
-      res <- glm(y2~x2)
-      out[i,8:11] <- as.numeric(summary(res)$coefficients[2,])
-    }
-
-    # meta-analysis
-    tmp_meta <- data.frame(beta = out[i, c(4,8)], se = out[i, c(5,9)])
-    tmp_meta$se <- ifelse(tmp_meta$se == 0, 0.001, tmp_meta$se) # need to discuss for if se==0, can't get meta result
-    res_meta <- rma(yi = beta, data = tmp_meta, sei = se, method = "DL")
-    out[i, 12:13] <- c(res_meta$zval, res_meta$pval)
-
-    # association value
-    pvalue <- c(out[i, c(7,11,13)])
-    estimate <- c(out[i, c(4,8,12)])
-
-    out[i ,15] <- min(pvalue)
-    zscore <- qnorm(1-(min(pvalue)/2))
-    out[i, 14] <- ifelse(estimate[which.min(pvalue)] >0, zscore, -zscore)
+  minvalue <- min(matchmicrobiota[matchmicrobiota!=0])
+  g1microbiota3 <- log(g1microbiota+minvalue)
+  g2microbiota3 <- log(g2microbiota+minvalue)
+  for(i in 1:ncol(matchmicrobiota)){
+    x <- g1microbiota3[,i]
+    y <- g2microbiota3[,i]
+    if(x!=0)
+    ttestres <- t.test(x, y ,paired = T)
+    out[i, 8:10] <- as.numeric(c(ttestres$statistic, ttestres$estimate, ttestres$p.value))
 
   }
 
   # meta-analysis
-
-
-  rownames(out) <- colnames(dat)
-  colnames(out) <- c("No.absent", "No.Present", "medianAbundance",
-                     paste0("binary", c("_estimate", "_se", "_tvalue", "_p")),
-                     paste0("quantitative", c("_estimate", "_se", "_tvalue", "_p")),
-                     paste0("Meta", c("_zvalue", "_p")),
-                     paste0("Asso", c("_zvalue", "_p")))
+  rownames(out) <- colnames(matchmicrobiota)
+  colnames(out) <- c("No.sample",
+                     paste0(rep(c("No.absent.", "medianAbundance."),each=2), time_name),
+                     "Chisq_Mcnemar", "Pvalue_Mcnemar",
+                     "T_Ttest", "Estimate_Ttest", "Pvalue_Ttest"
+                     )
 
   return(out)
 

@@ -9,7 +9,7 @@
 #' Tests for the difference between two related variables; takes into account the magnitude and direction of difference
 #'
 #' @details 01/10/2020 ShenZhen China
-#' @author  Hua Zou
+#' @author  Hua Zou/ Huahui Ren
 #'
 #' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
 #'        sample data including the measured variables and categorical information of the samples.
@@ -191,8 +191,9 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
     #
     # Returns:
     #   the glm result of between taxonomy group
-    dat.glm <- data.frame(group=m, marker=scale(n, center=T, scale=T)) %>% na.omit()
-    model <- summary(glm(group ~ marker, data = dat.glm,
+    n[n==0] <- min(n[n!=0])
+    dat.glm <- data.frame(group=m, marker=log(n)) %>% na.omit()
+    model <- summary(rlm(group ~ marker, data = dat.glm,
                          family = binomial(link = "logit")))
     res <- signif(exp(model$coefficients["marker",1]) +
                     qnorm(c(0.025,0.5,0.975)) * model$coefficients["marker",1], 2)

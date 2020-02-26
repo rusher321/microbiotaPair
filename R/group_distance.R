@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-plot_pair_distance <- function(microbiota, metadata, method = "bray", percent.outlier = 0.5){
+plot_pair_distance <- function(microbiota, metadata, method = "bray", percent.outlier = 0.05){
 
   # match the ID , get the baseline & treatment data
   matchname <- names(table(metadata[, pairID_varname]))[table(metadata[, pairID_varname]) == 2]
