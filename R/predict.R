@@ -454,7 +454,9 @@ randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, 
 
   return(out)
 
-}randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
+}
+
+  randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
 
 
   #  feature selection function
