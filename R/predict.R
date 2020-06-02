@@ -548,7 +548,22 @@ randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, 
 }
 
 
-
+#### 
+   randomForesttwo <- function(x){
+   
+   # feature selection 
+   # rm the zero 
+   # select the lowest wilcox pvalue,  & rmmove the species with the highest correlation value  >  cutoff  (o.6 )
+   # then the second run , until get the top X highest feature 
+     
+       
+   # model on leave one 
+        
+   
+   
+   
+   
+   }
 
 
 
