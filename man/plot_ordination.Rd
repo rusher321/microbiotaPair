@@ -17,6 +17,8 @@ of \code{phyloseq} are acceptable here as well ( Default is "PCOA").
 information.}
 
 \item{PID}{id (Required) for paired test}
+
+\item{time_colour}{a vector include the color}
 }
 \value{
 Returns a ggplot object.
@@ -40,5 +42,5 @@ plot_ordination(ord.res, method = "PCoA", grouping_column = "Stage", PID = "ID")
 \url{http://userweb.eng.gla.ac.uk/umer.ijaz/}, Umer Ijaz, 2015
 }
 \author{
-Hua Zou
+Hua Zou; hua huiren
 }

@@ -38,7 +38,7 @@ data2phyloseq <- function(metadata, micro, occ = 0.2){
             filter(occurrence >= occ)
   tax_table <- micro[rownames(micro)%in%remain_tax$tax, ] %>% as.matrix()
   otu <- otu_table(tax_table, taxa_are_rows = TRUE)
-  sample_data <- sample_data(metadata) %>% column_to_rownames("")
+  sample_data <- sample_data(metadata)
   physeq <- phyloseq(otu, sample_data)
 
   return(physeq)

@@ -7,13 +7,11 @@
 data2phyloseq(x, y, z, sampleid)
 }
 \arguments{
-\item{x}{x  (Required) A table including multiple vectors of subjects' characteristic;}
+\item{metadata}{x  (Required) A table including multiple vectors of subjects' characteristic;}
 
-\item{y}{y  (Required) A table including multiple metabolic measures of subjects;}
+\item{micro}{y  (Required) A table including multiple taxonomy, colnames are sampleid, rownames are taxonomy;}
 
-\item{z}{z  (Required) A table including multiple taxonomy, colnames are sampleid, rownames are taxonomy;}
-
-\item{sampleid}{A  (Required) character of the subjects' ID to connect the three groups.}
+\item{occ}{A numberic of the occurrence above to restain}
 }
 \value{
 A phyloseq object
@@ -30,13 +28,13 @@ library(dplyr)
 library(data.table)
 library(tibble)
 
-x <- read.csv(system.file("extdata", "phenotype.csv", package = "microbiotaPair"))
-y <- fread(system.file("extdata", "metabolic.profile", package = "microbiotaPair"))
-z <- fread(system.file("extdata", "abundance.profile", package = "microbiotaPair"))
+metadata <- read.csv(system.file("extdata", "phenotype.csv", package = "microbiotaPair"))
+micro <- read.table(system.file("extdata", "abundance.profile", 
+    package = "microbiotaPair"), sep = "\t")
 sampleid <- "SampleID"
 
-physeq_data <- data2phyloseq(x, y, z, sampleid)
-print(physeq_data)
+physeq_data <- data2phyloseq(metadata, micro)
+# print(physeq_data)
 
 }
 \author{

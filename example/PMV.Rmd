@@ -1,0 +1,133 @@
+---
+title: "Analysis pipeline"
+output: html_notebook
+---
+
+
+# load data 
+
+```{r}
+library(data.table)
+## profile 
+tax <- fread("../data/metaphlan3.merged.abundance.profile.all.tsv", stringsAsFactors = F, data.table = F)
+rownames(tax) <- tax$clade_name
+tax <- tax[,-c(1:2)]
+humann2 <- fread("../data/humann2_pathabundance_joined_unstratified.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
+rownames(humann2) <- humann2$V1
+humann2 <- humann2[,-1]
+
+## metadata 
+metadata <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 2)
+rownames(metadata) <- metadata$PID
+
+```
+
+# 00.global view
+
+## Alpha-diversity 
+
+```{r}
+
+
+
+```
+
+
+## Beta-diversity
+
+```{r}
+
+
+
+```
+
+## Composition
+
+```{r}
+
+
+```
+
+## Network 
+
+```{r}
+
+
+
+```
+
+# 01.Compare analysis
+
+## Taxanomy 
+
+```{r}
+
+```
+
+
+## Function 
+
+```{r}
+
+
+```
+
+
+# 02.Correlation analysis 
+
+## Species vs clinical 
+
+```{r}
+
+
+```
+
+
+## Module vs clinical 
+
+```{r}
+
+
+
+```
+
+## Species vs Metabolism 
+
+```{r}
+
+
+
+```
+
+
+## Module vs Metabolism 
+
+```{r}
+
+
+```
+
+# 03. Model 
+
+## RF based on species & module 
+
+```{r}
+
+
+
+
+```
+
+## RF based on species & metabolism 
+
+
+```{r}
+
+
+
+
+```
+
+
+
+

@@ -4,40 +4,35 @@
 \alias{plot_alpha_diversity}
 \title{Plot alpha diversity}
 \usage{
-plot_alpha_diversity(physeq, method, grouping_column, pid)
+plot_alpha_diversity(alphares)
 }
 \arguments{
-\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
+\item{alphares}{(Required). A result from \code{alpha_diversity} function
 sample data including the measured variables and categorical information of the samples.}
 
 \item{method}{(Required). A list of character strings specifying \code{method} to be used to calculate for alpha diversity
-in the data. Available methods are: "observed", "chao1", "simpson", "shannon", "evenness" and "all".}
-
-\item{grouping_column}{(Required). A character string specifying the name of a categorical variable containing grouping information.}
-
-\item{pid}{(Required) A character string for paired test}
+in the data. Available methods are: "t.test", "wilcox.test".}
 }
 \value{
 Returns a ggplot object
 }
 \description{
 This function calculates alpha diversity of provided community data using
-selected method(s). It performs pair-wise ANOVA of diversity measures between groups
+selected method(s). It performs paired wilcox or t-test of diversity measures between groups
 and outputs a plot for each of the selected methods(indices) annotated with significance levels.
 }
 \details{
-14/01/2020  ShenZhen China
+22/01/2020  ShenZhen China
 }
 \examples{
 library(dplyr)
 library(ggplot2)
+source("R/config.R")
 data(physeq_data)
-method <- c("shannon", "simpson")
-grouping_column <- "Stage"
-pid <- "ID"
+alphares <- alpha_diversity(physeq_data)
 plot_alpha_diversity(physeq_data, method, grouping_column, pid)
 
 }
 \author{
-Hua Zou
+Huahui Ren, zouhua
 }

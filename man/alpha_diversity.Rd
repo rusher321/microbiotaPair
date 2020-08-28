@@ -7,11 +7,11 @@
 alpha_diversity(physeq, method)
 }
 \arguments{
-\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
-sample data including the measured variables and categorical information of the samples.}
-
 \item{method}{(Required). A list of character strings specifying \code{method} to be used to calculate for alpha diversity
 in the data. Available methods are: "observed", "chao1", "simpson", "shannon" and "evenness" .}
+
+\item{physeq}{(Required). A \code{phyloseq} object containing merged information of abundance,
+sample data including the measured variables and categorical information of the samples.}
 }
 \value{
 It returns a data frame of diversity measure and corresponding indices/methods
@@ -29,5 +29,5 @@ alpha_diversity(physeq_data, method)
 
 }
 \author{
-Hua Zou
+(s)  Hua Zou, Huahui Ren huahui.ren@bio.ku.dk
 }

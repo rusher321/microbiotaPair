@@ -65,5 +65,5 @@ result <- wilcox_sign(physeq_data, sampleid, pid, group, grp1, grp2)
 
 }
 \author{
-Hua Zou
+Hua Zou/ Huahui Ren
 }

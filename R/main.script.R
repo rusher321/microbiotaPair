@@ -1,3 +1,4 @@
+if(F){
 ######### main analysi result ##########
 
 ######### input & set ###########
@@ -9,6 +10,7 @@ microbio <- read.table("inst/extdata/abundance.profile", header = T,
 metadata <- read.csv("inst/extdata/phenotype.csv")
 rownames(metadata) <- metadata[, sample_varname]
 phyloseq <- data2phyloseq(metadata = metadata, micro = microbio)
+
 # generate the output directory
 sapply(paste0(outputDir, c("/globalview", "/diff", "/corr", "/network", "/pred")),dir.create)
 
@@ -44,7 +46,7 @@ ggsave(paste0(outputDir, "/globalview/distance.figure.pdf"), distancefigure, wid
 
 # Diffrence Analysis
 
-
+}
 
 
 
