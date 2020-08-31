@@ -209,14 +209,16 @@ res2 <- PcorPair(microbiota = speciesData, metadata = metadata, metadataVar = me
 
 ```{r}
 source("../R/predict.R")
+library(caret)
 # to generate the  classified model 
-sele_spe <- splittax$pmv_species[com_species[com_species$Pvalue <= 0.05, "type"], ] %in% t() %>% as.data.frame()
+sele_spe <- as.data.frame(t(splittax$pmv_species[com_species[com_species$Pvalue <= 0.05, "type"], ]))  
 
-sele_human <- humann2ft[com_humann2[com_humann2$Pvalue <= 0.05, "type"], ] %>% t() %>% as.data.frame()
+humann2ft2 <- data.frame(t(humann2ft))
+sele_human <- humann2ft2[, com_humann2[com_humann2$Pvalue <= 0.05, "type"]]
 
 # species model
-phe <- metadat[rownames(sele_spe), ]
-res_species <- randomForestTwo(data = all, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
+phe <- metadata[rownames(sele_spe), ]
+res_species <- randomForestTwo(data = sele_spe, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
 plot1 <- perfPlot(res_species, title = "Group")
 
 

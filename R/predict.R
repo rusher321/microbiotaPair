@@ -189,6 +189,35 @@ CvLasso <- function(responsetag, response, microbio, transformM = "IQN",
   }
 }
 
+
+
+
+rocPlot2 <- function(response, predict, title){
+
+  roc1 <- pROC::roc(response, predict)
+  roc1.ci <- round(as.numeric(ci.auc(response , predict)),2)*100
+  title1 <- paste0("AUC(low vs high) = ",roc1.ci[2],"% (",roc1.ci[1],"-",roc1.ci[3],"%)")
+
+  qdat <- data.frame(response = response, predict = predict, group = title1)
+
+  label1 <- title1
+
+  annosize <- 5.5
+
+  p <- ggplot(qdat, aes(m = predict, d = as.numeric(qdat$response)-1, colour = group)) +
+    geom_roc()+
+    mytheme +
+    theme(legend.position = c(0.7,0.25)) +
+    scale_colour_manual(values = c("#000000"),
+                        labels=c(label1)) +
+    guides(colour=guide_legend(title = NULL)) +
+    geom_abline(linetype = 'dashed', colour = 'grey')+ggtitle(title)
+
+  return(p)
+
+}
+
+
 ##  random foreset
 
 #' randomForestTwo
