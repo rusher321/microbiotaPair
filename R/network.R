@@ -198,3 +198,51 @@ simplenet <- function(adjmatrix, main,...){
        main = main ,...)
 
 }
+
+simulateNetwork <- function(dat, repeatN , sampleN){
+
+  # sample the data
+  out <- matrix(0, nrow = ncol(dat), ncol = ncol(dat))
+  for(i in 1:repeatN){
+    index <- sample(c(1:nrow(dat)), sampleN, replace = T)
+    dat2 <- dat[index, ]
+    out <- out+sparcc(dat2)$Cor
+  }
+
+  out2 <- out/repeatN
+  return(out2)
+
+}
+
+
+sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
+
+  # generate the result
+  library(phyloseq)
+  library(SpiecEasi)
+  library(rmeta)
+
+  phe.cln <- sample_data(phemeta[phemeta[, group_var]==group, ])
+  otu.cln <- otudata[,rownames(g1basephe)]
+  # simulate the count data
+  otuN <- t(round(renorm(t(otu.cln))*10^5))
+  otuN <- otu_table(otuN, taxa_are_rows = T)
+
+  pylores <- phyloseq(phe.cln, out.cln, rank)
+
+  # repeat sparCC
+  sparccres <- simulateNetwork(dat = t(otuN), repeatN = 100, sampleN = 50)
+  sparcc.graph <- abs(sparccres) >= 0.3
+  diag(sparcc.graph) <- 0
+  sparcc.graph2 <- Matrix(sparcc.graph, sparse=TRUE)
+  ig.sparcc <- adj2igraph(sparcc.graph2, vertex.attr=list(name=taxa_names(pylores)))
+
+  # plot
+  fig <- plot_network(ig.sparcc, pylores, type='taxa', color="ta2")
+
+  return(list(fig, sparcc.graph))
+
+}
+
+
+

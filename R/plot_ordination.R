@@ -35,7 +35,8 @@
 #'
 #' @export plot_ordination
 #'
-plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID="ID" , time_colour = NULL){
+plot_ordination <- function(ordination.res, phylores, method, grouping_column="Stage",
+                            PID="ID" , paired = F, time_colour = NULL){
 
   if(method == "Tsne"){
     temp <- data.frame(ordination.res$solution$tsne$par)
@@ -46,10 +47,15 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
   }
   adn_res <- ordination.res$adonis_res
   betadisper_res <- ordination.res$betadispersion
-
   df_points <- data.frame(sol$points) %>% setNames(c("Axis1", "Axis2"))
-  df_meta <- phyloseq::sample_data(physeq) %>% select(c(PID, grouping_column)) %>%
-    data.frame() %>% setNames(c("PID", "grouping"))
+  if(paired){
+    df_meta <- phyloseq::sample_data(phylores) %>% select(c(PID, grouping_column)) %>%
+      data.frame() %>% setNames(c("PID", "grouping"))
+  }else{
+    df_meta <- phyloseq::sample_data(phylores)[, c(grouping_column), drop=F] %>%
+      data.frame() %>% setNames(c("grouping"))
+  }
+
   df_mdat <- inner_join(df_points %>% rownames_to_column("sample"),
                         df_meta %>% rownames_to_column("sample"),
                         by = "sample")
@@ -80,8 +86,10 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
     rownames_to_column("grouping")
   group_border <- plyr::ddply(df_mdat, 'grouping', function(x)x[chull(x[[2]], x[[3]]), ])
 
-  p <- p + geom_line(aes(group=PID), linetype = "dashed", alpha = 0.3) +
-    geom_text(data = group_label, aes(x=Axis1, y=Axis2, label=grouping, color=grouping)) +
+  if(paired){
+    p <- p + geom_line(aes(group=PID), linetype = "dashed", alpha = 0.3)
+  }
+    p <- p + geom_text(data = group_label, aes(x=Axis1, y=Axis2, label=grouping, color=grouping)) +
     geom_polygon(data = group_border, aes(fill = grouping), color = "black", alpha = 0.1, show.legend = FALSE)+
     #scale_color_manual(values = cols)+
     guides(group=F, fill=F, color=F)+
@@ -123,6 +131,123 @@ plot_ordination <- function(ordination.res, method, grouping_column="Stage", PID
   # add a table of beta dispersion results
   return(p)
 }
+
+
+############# plot the tax composition  ###########
+
+
+#' comtaxTop
+#'
+#' @param dat
+#' @param group
+#' @param top
+#' @param group_var
+#'
+#' @return
+#' @export
+#'
+#' @examples
+comtaxTop <- function(dat, group, top, group_var){
+
+  # order features
+  b <- data.frame(
+    Max = apply(dat,1,mean)
+  ) %>%
+    rownames_to_column(var="Species") %>%
+    arrange(desc(Max))
+  order_feature <- b$Species[1:top]
+  if(nrow(b)>top){
+    dat <- dat %>%
+      rownames_to_column(var="Species") %>%
+      mutate(
+        Species = replace(Species, !Species %in% order_feature, "Other")
+      ) %>%
+      group_by(Species)  %>%
+      summarise_all(sum) %>%
+      column_to_rownames(var="Species")
+    order_feature <- c(order_feature, "Other")
+  }
+
+  # order samples
+  a <- data.frame(Sum = as.numeric(dat[order_feature[1],]))
+  rownames(a) <- colnames(dat)
+  group <- group[rownames(a), group_varname, drop=F]
+  colnames(group) <- "Group"
+  a <- cbind(a,group) %>% rownames_to_column(var="SampleID")
+  a <- a[order(a$Sum,decreasing = T),]
+  a <- a[order(a$Group),]
+  order_sampels <- as.character(a$SampleID)
+  a$y = ""
+  a$SampleID <- factor(a$SampleID, levels = order_sampels)
+
+  # Dataframe transform
+  dat2 <- dat %>%
+    rownames_to_column(var="Species") %>%
+    gather(Samples,Abundance,-Species) %>%
+    mutate(
+      Species = factor(Species,levels = order_feature),
+      Samples = factor(Samples,levels = order_sampels)
+    )
+
+  # barplot
+  # Colors <- c("#000080","#0029FF","#00D5FF","#7DFF7A","#FFE600","#FF4700","#800000","#808080")
+  Colors <- brewer.pal(12, "Paired")  #
+  if(top>11){
+    stop("add the colors scale!")
+  }
+  p1 <- ggplot(dat2,aes(Samples,Abundance,fill=Species))+
+    geom_bar(stat = "identity",color="black")+
+    scale_y_continuous(expand = expand_scale(mult = c(0,0.1)))+
+    scale_fill_manual(values = Colors)+
+    xlab("") + ylab("Relative abundance")+
+   # labs(title = FullName)+
+    theme_bw()+
+    theme(
+      axis.title = element_text(size = 14,color = "black"),
+      axis.text = element_text(size = 13,color = "black"),
+      axis.text.x = element_blank(),
+      axis.ticks = element_blank(),
+      legend.title = element_text(size = 14,color = "black"),
+      legend.text = element_text(size = 13,color = "black",face = "italic"),
+      panel.grid = element_blank(),
+      plot.title = element_text(size = 14,color = "black",hjust = 0.5)
+    )
+
+  p2 <- ggplot(a,aes(SampleID,y,fill=Group))+
+    geom_tile()+
+    xlab("Samples")+ylab("")+
+    scale_y_discrete(expand = c(0,0))+
+    scale_fill_manual(values = time_colour)+
+    theme_bw()+
+    theme(
+      axis.title = element_text(size = 14,color = "black"),
+      axis.text = element_text(size = 13,color = "black"),
+      axis.text.x = element_blank(),
+      axis.ticks = element_blank(),
+      legend.title = element_text(size = 14,color = "black"),
+      legend.text = element_text(size = 13,color = "black"),
+      panel.grid = element_blank()
+    )
+
+  ggarrange(p1,p2,nrow = 2,ncol = 1,align = "v",heights = c(5,1),legend = "right")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

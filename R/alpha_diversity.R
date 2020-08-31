@@ -24,7 +24,7 @@
 #'
 #' @export alpha_diversity
 #'
-alpha_diversity <- function(physeq_data, method){
+alpha_diversity <- function(physeq_data, method, paired = T){
 
   #==check for validity of selected methods
   method <- match.arg(method, c("observed", "chao1", "simpson", "shannon", "evenness", "all"), several.ok = TRUE)
@@ -53,12 +53,6 @@ alpha_diversity <- function(physeq_data, method){
     else{df <- dplyr::inner_join(df, observed, by = "sample")}
    }
 
-  if(any(c("all", "chao1") %in% method)){
-    chao1 <- microbiome_alpha("chao1")
-    if(is.null(df)){df <- chao1}
-    else{df <- dplyr::inner_join(df, chao1, by = "sample")}
-  }
-
   if(any(c("all", "simpson") %in% method)){
     simpson <- microbiome_alpha2("simpson")
     if(is.null(df)){df <- simpson}
@@ -84,9 +78,14 @@ alpha_diversity <- function(physeq_data, method){
     }
 
   # rbind the sample ID
-  sampledata <- sample_data(physeq_data) %>% select(sample_varname, time_varname, pairID_varname) %>%
+  if(paired){
+    sampledata <- sample_data(physeq_data) %>% select(sample_varname, time_varname, pairID_varname) %>%
     rename(sample = sample_varname) %>% inner_join(df, by = "sample")
-
+  }else{
+    sampledata <- sample_data(physeq_data)
+    sampledata$sample <- rownames(sampledata)
+    sampledata <- inner_join(df, sampledata, by = "sample")
+}
   return(sampledata)
 }
 

@@ -8,17 +8,35 @@ output: html_notebook
 
 ```{r}
 library(data.table)
+library(rmeta)
+library(tibble)
+library(reshape)
+library(phyloseq)
 ## profile 
 tax <- fread("../data/metaphlan3.merged.abundance.profile.all.tsv", stringsAsFactors = F, data.table = F)
 rownames(tax) <- tax$clade_name
 tax <- tax[,-c(1:2)]
+splittax <- splitMetaphlan2(tax, prefix = "pmv")
+
+### function 
 humann2 <- fread("../data/humann2_pathabundance_joined_unstratified.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
-rownames(humann2) <- humann2$V1
+rownames(humann2) <- humann2[,1]
 humann2 <- humann2[,-1]
+colnames(humann2) <- gsub("_Abundance", "", colnames(humann2))
+# rm unmapped & unintergrate & scale
+humann2f <- humann2[-c(1:2),]
+humann2ft <- apply(humann2f, 2, function(x){x/sum(x)})
+
 
 ## metadata 
 metadata <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 2)
 rownames(metadata) <- metadata$PID
+metadata$Group <- ifelse(metadata$Group == 0, "g0", "g1")
+## generate 
+phylo <- data2phyloseq(metadata = metadata, micro = splittax$pmv_genus, occ = 0.1)
+phylo2 <- data2phyloseq(metadata = metadata, micro = splittax$pmv_species, occ = 0.1)
+phylo3 <- data2phyloseq(metadata = metadata, micro = humann2ft, occ = 0.1)
+
 
 ```
 
@@ -26,32 +44,91 @@ rownames(metadata) <- metadata$PID
 
 ## Alpha-diversity 
 
-```{r}
+```{r, warning=F}
+source("../R/alpha_diversity.R")
+source("../R/plot_alpha_diversity.R")
+source("../R/config.R")
+genus_diver <- alpha_diversity(phylo, method = "all", paired = F)[, c(2:5,8)]
+species_diver <- alpha_diversity(phylo2, method = "all", paired = F)[, c(2:5,8)]
+humann_diver <- alpha_diversity(phylo3, method = "all", paired = F)[, c(2:5,8)]
+# plot 
 
-
-
+plot_alpha_diversity(species_diver, pair = F)
+plot_alpha_diversity(genus_diver, pair = F)
+plot_alpha_diversity(humann_diver, pair = F)
 ```
 
 
 ## Beta-diversity
 
-```{r}
+```{r, warning=F}
+source("../R/ordination.R")
+source("../R/plot_ordination.R")
+# genus 
+genus_ord <- ordination(physeq = phylo, which_distance = "bray", method = "NMDS",
+                        grouping_column = group_varname)
 
+plot_ordination(ordination.res = genus_ord, phylores = phylo, method = "NMDS", 
+                        grouping_column = group_varname, paired = F)
+
+# species 
+species_ord <- ordination(physeq = phylo2, which_distance = "bray", method = "NMDS",
+                        grouping_column = group_varname)
+
+plot_ordination(ordination.res = species_ord, phylores = phylo, method = "NMDS", 
+                        grouping_column = group_varname, paired = F)
+
+# humann2 
+
+humann2_ord <- ordination(physeq = phylo3, which_distance = "bray", method = "NMDS",
+                        grouping_column = group_varname)
+
+plot_ordination(ordination.res = humann2_ord, phylores = phylo, method = "NMDS", 
+                        grouping_column = group_varname, paired = F)
 
 
 ```
 
 ## Composition
 
-```{r}
-
+```{r, warning=F}
+## Top10 Genus 
+source("../R/plot_ordination.R")
+comtaxTop(dat = splittax$pmv_genus, group = metadata, top = 10, group_var = "Group")
+## Top10 Species 
+comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "Group")
 
 ```
 
 ## Network 
 
 ```{r}
+### sparCC (spearman)
+source("../R/network.R")
+rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
+rownames(rankclass) <- rankclass$V7
+rankfilter <- tax_table(rankclass[rownames(otu_table(phylo2)), ])
+# result 
+set.seed(000)
+gonet <- sparCCnetwork(microdata  = otu_table(phylo2), rank = rankfilter, 
+                       phemeta = sample_data(phylo2), group = "go", group_var = "Group")
+g1net <- sparCCnetwork(microdata = otu_table(phylo2), rank = rankfilter, 
+                       phemeta = sample_data(phylo2), group = "g1", group_var = "Group")
 
+phemeta2 <- sample_data(phylo2)
+phemeta2$Group2 <- "all"
+allnet <- sparCCnetwork(microdata = otu_table(phylo2), rank = rankfilter, 
+                       phemeta = sample_data(phylo2), group = "all", group_var = "Group2")
+# stat
+
+
+# plot
+cowplot::plot_grid(g0net[[1]], g1net[[1]],  allnet[[1]],
+                          labels = c("A", "B", "C"), ncol = 2, align = "h")
+
+
+
+### BAnOCC 
 
 
 ```
@@ -60,7 +137,20 @@ rownames(metadata) <- metadata$PID
 
 ## Taxanomy 
 
-```{r}
+```{r, warning=F}
+
+source("../R/Wilcoxon_Sign_Rank_Test.R")
+### genus 
+com_genus <- compare_two(physeq = phylo, PID = NULL, GROUP = "Group", grp1 = "g0",
+                         grp2 =  "g1", paired = F, occ = 0.1)
+
+
+### species 
+com_species <- compare_two(physeq = phylo2, PID = NULL, GROUP = "Group", grp1 = "g0",
+                         grp2 =  "g1", paired = F, occ = 0.1)
+
+
+
 
 ```
 
@@ -68,7 +158,8 @@ rownames(metadata) <- metadata$PID
 ## Function 
 
 ```{r}
-
+### humann2 
+com_humann2 <- compare_two(physeq = phylo3, PID = NULL, GROUP = "Group", grp1 = "g0",grp2 =  "g1", paired = F, occ = 0.1)
 
 ```
 
@@ -78,56 +169,59 @@ rownames(metadata) <- metadata$PID
 ## Species vs clinical 
 
 ```{r}
+# partial spearman correlation
+source("../R/pcorPair.R")
+metadataVar <- colnames(metadata)[6:70]
+confounder <- c("sex", "age")
+
+# split g0 & g1
+res <- PcorPair(microbiota = otu_table(phylo2) %>% t() %>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
+
+# all 
+metadata$Group2 <- "all"
+
+res2 <- PcorPair(microbiota = otu_table(phylo2) %>% t()%>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+
+# plot 
 
 
 ```
 
 
-## Module vs clinical 
+## Pathway vs clinical 
 
 ```{r}
+# split g0 & g1
+res <- PcorPair(microbiota = otu_table(phylo3) %>% t() %>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
 
-
-
-```
-
-## Species vs Metabolism 
-
-```{r}
-
-
-
-```
-
-
-## Module vs Metabolism 
-
-```{r}
+# all 
+metadata$Group2 <- "all"
+speciesData <- otu_table(phylo3) %>% t()%>%as.data.frame()
+res2 <- PcorPair(microbiota = speciesData, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
 
 
 ```
+
 
 # 03. Model 
 
-## RF based on species & module 
+## RF based on species & Pathway 
 
 ```{r}
+source("../R/predict.R")
+# to generate the  classified model 
+sele_spe <- splittax$pmv_species[com_species[com_species$Pvalue <= 0.05, "type"], ] %in% t() %>% as.data.frame()
+
+sele_human <- humann2ft[com_humann2[com_humann2$Pvalue <= 0.05, "type"], ] %>% t() %>% as.data.frame()
+
+# species model
+phe <- metadat[rownames(sele_spe), ]
+res_species <- randomForestTwo(data = all, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
+plot1 <- perfPlot(res_species, title = "Group")
 
 
-
+# pathway model 
+res_pathway <- randomForestTwo(data = all, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
+plot2 <- perfPlot(res_pathway, title = "Group")
 
 ```
-
-## RF based on species & metabolism 
-
-
-```{r}
-
-
-
-
-```
-
-
-
-

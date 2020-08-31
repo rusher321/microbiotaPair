@@ -29,20 +29,28 @@
 #' @export plot_alpha_diversity
 #'
 
-plot_alpha_diversity <- function(alphares, method = "wilcox.test"){
+plot_alpha_diversity <- function(alphares, method = "wilcox.test", pair = F){
+
+    if(pair){
+      qdat <- tidyr::gather(alphares, key = "alpha_index", value = "index_value",
+                     -c(sample, pairID_varname, time_varname))
+      # order the time_varname
+      qdat[, time_varname] <- factor(qdat[, time_varname], levels = time_name)
+      pr <- levels(qdat[, time_varname])
+      mycmp <- list(c(pr))
+      p <- ggboxplot(qdat, x = time_varname, y = "index_value", fill = time_varname) +
+        geom_line(aes(group = ID), colour = "grey")
+    }else{
+      qdat <-  tidyr::gather(alphares, "alpha_index", "index_value", -c(group_varname))
+      qdat[, group_varname] <- factor(qdat[, group_varname], levels = group_name)
+      pr <- levels(qdat[, group_varname])
+      mycmp <- list(c(pr))
+      p <- ggboxplot(qdat, x = group_varname, y = "index_value", fill = group_varname)
+
+    }
 
 
-    qdat <- gather(alphares, key = "alpha_index", value = "index_value",
-                   -c(sample, pairID_varname, time_varname))
-    # order the time_varname
-    qdat[, time_varname] <- factor(qdat[, time_varname], levels = time_name)
-
-    pr <- levels(qdat[, time_varname])
-    mycmp <- list(c(pr))
-
-    p <- ggboxplot(qdat, x = time_varname, y = "index_value", fill = time_varname) +
-    geom_line(aes(group = ID), colour = "grey") +
-    stat_compare_means(comparisons = mycmp, method = method, paired = TRUE) +
+    p <- p+stat_compare_means(comparisons = mycmp, method = method, paired = pair) +
    # stat_boxplot(geom = "errorbar",width = 0.15) +
     #stat_summary(fun.y = mean, geom = "point", shape = 16, size = 2, color = "black") +
     geom_jitter(position = position_jitter(height = 0, width=0), shape = 21) +

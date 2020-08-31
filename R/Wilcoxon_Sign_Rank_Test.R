@@ -47,43 +47,36 @@
 #'
 #' @export
 #'
-wilcox_sign <- function(physeq, DNAID, PID, GROUP,
-                        grp1=NULL, grp2=NULL){
+compare_two <- function(physeq, PID, GROUP,
+                        grp1=NULL, grp2=NULL, paired, occ){
 
-  phen <- microbiome::meta(physeq) %>% tibble::rownames_to_column(DNAID)
-  prof <- microbiome::abundances(physeq) %>% data.frame()
+  library(dplyr)
+  phen <- sample_data(physeq) %>% data.frame()
+  prof <- otu_table(physeq) %>% data.frame()
 
   # determine x with two cols and names are corret
-  colnames(phen)[which(colnames(phen) == DNAID)] <- "SampleID"
+ phen$SampleID <- rownames(phen)
+ colnames(phen)[which(colnames(phen) == GROUP)] <- "Stage"
+
+ if(paired){
   colnames(phen)[which(colnames(phen) == PID)] <- "ID"
-  colnames(phen)[which(colnames(phen) == GROUP)] <- "Stage"
-  if (length(which(colnames(phen)%in%c("SampleID","ID","Stage"))) != 3){
-    warning("x without 2 cols: DNAID, ID, GROUP")
-  }
-  phe <- phen %>% select(c("SampleID", "ID", "Stage"))
-
-  # select groups
-  if(length(grp1)){
-    phe.cln <- phe %>% filter(Stage%in%c(grp1, grp2)) %>%
-      mutate(Stage=factor(Stage, levels = c(grp1, grp2))) %>%
-      arrange(ID, Stage)
-    pr <- c(grp1, grp2)
-  } else {
-    phe.cln <- phe %>% mutate(Stage=factor(Stage)) %>%
-      arrange(ID, Stage)
-    pr <- levels(phe.cln$Stage)
-  }
-
-  if (length(levels(phe.cln$Stage)) > 2) {
-    stop("The levels of `group` are more than 2")
-  }
+  phe <- phen %>% dplyr::select(c("SampleID", "ID", "Stage"))
+  phe.cln <- phe %>% filter(Stage%in%c(grp1, grp2)) %>%
+    mutate(Stage=factor(Stage, levels = c(grp1, grp2))) %>%
+    arrange(ID, Stage)
+ }else{
+   phe <- phen %>% dplyr::select(c("SampleID", "Stage"))
+   phe.cln <- phe %>% filter(Stage%in%c(grp1, grp2)) %>%
+     mutate(Stage=factor(Stage, levels = c(grp1, grp2))) %>%
+     arrange(Stage)
+ }
 
   # profile
   sid <- intersect(phe.cln$SampleID, colnames(prof))
-  prf <- prof %>% select(sid) %>%
+  prf <- prof %>% dplyr::select(sid) %>%
     rownames_to_column("tmp") %>%
     # occurrence of rows more than 0.3
-    filter(apply(select(., -one_of("tmp")), 1, function(x){sum(x[!is.na(x)] != 0)/length(x)}) > 0.3) %>%
+    filter(apply(dplyr::select(., -one_of("tmp")), 1, function(x){sum(x[!is.na(x)] != 0)/length(x)}) > occ) %>%
     data.frame() %>% column_to_rownames("tmp") %>%
     t() %>% data.frame()
 
@@ -92,45 +85,22 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
     stop("No row of profile to be choosed\n")
   }
 
-  # determine the right order and group levels
-  for(i in 1:nrow(prf)){
-    if ((rownames(prf) != phe.cln$SampleID)[i]) {
-      stop(paste0(i, " Wrong"))
-    }
-  }
+  phe.cle <- phe.cln %>% filter(SampleID %in% sid)
+  pr <- c(grp1, grp2)
 
-  # merge phenotype and profile
-  mdat <- inner_join(phe.cln %>% filter(SampleID%in%sid),
-                     prf %>% rownames_to_column("SampleID"),
-                     by = "SampleID")
+  res <- apply(prf, 2, function(x, phe.cle){
 
-  dat.phe <- mdat %>% select(c(1:3))
-  dat.prf.tmp <- mdat %>% select(-c(1:3))
-  dat.prf <- apply(dat.prf.tmp, 2, function(x){
-    as.numeric(as.character(x))}) %>% data.frame()
-
-  res <- apply(dat.prf, 2, function(x, grp){
-
-    origin <- data.frame(value=as.numeric(x), grp)
+    origin <- data.frame(value=as.numeric(x), phe.cle)
     number <- tapply(origin$value, origin$Stage, function(x){sum(!is.na(x))})
     Num <- paste0(pr[1], number[1], "_vs_",
                   pr[2], number[2])
     # remove NA data
-    dat <- origin %>% na.omit()
-    intersectFun <- function(x){
-      tmp <- x %>% mutate(Stage = factor(Stage))
-      id <- unique(as.character(tmp$ID))
-      for (i in 1:length(levels(tmp$Stage))) {
-        id <- intersect(id,
-                        unlist(tmp %>% filter(Stage == levels(Stage)[i]) %>% select(ID)))
-      }
-      return(id)
+    dat.cln <- origin %>% na.omit()
+    if(paired){
+      p <- signif(wilcox.test(value ~ Stage, data=dat.cln, paired=T)$p.value, 6)
+    }else{
+      p <- signif(wilcox.test(value ~ Stage, data=dat.cln)$p.value, 6)
     }
-    dat.cln <- dat %>% filter(ID%in%intersectFun(dat)) %>%
-      arrange(ID, Stage)
-
-    p <- signif(wilcox.test(value ~ Stage, data=dat.cln, paired=T)$p.value, 6)
-
     # median
     md <- signif(median(dat.cln$value), 4)
     mdn <- signif(tapply(dat.cln$value, dat.cln$Stage, median), 4)
@@ -159,7 +129,7 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
     res <- c(Num,Pair,p,enrich1,enrich2,occ,md,mdn,rnk)
 
     return(res)
-  }, dat.phe) %>%
+  }, phe.cle) %>%
     t(.) %>% data.frame(.) %>%
     rownames_to_column("type") %>%
     varhandle::unfactor(.)
@@ -169,7 +139,7 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
                                   paste0(pr, "_occurence"), "median_all",
                                   paste0(pr, "_median"), paste0(pr, "_rank"))
   res$Block <- paste0(pr[1], "_vs_", pr[2])
-  res.cln <- res %>% select(c(1,14,2:13)) %>%
+  res.cln <- res %>% dplyr::select(c(1,14,2:13)) %>%
     mutate(Pvalue=as.numeric(Pvalue)) %>%
     mutate(FDR=p.adjust(Pvalue, method = "BH")) %>%
     arrange(FDR, Pvalue)
@@ -177,11 +147,12 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
 
 
   # scale profile
-  dat.prf.cln <- dat.prf[, -1]
-  dat.phe.cln <- dat.phe %>% mutate(Group=ifelse(Stage==pr[1], 0, 1))
+
+  dat.phe.cln <- phe.cle %>% mutate(Group=ifelse(Stage==pr[1], 0, 1))
   idx <- which(colnames(dat.phe.cln) == "Group")
 
   # glm result for odd ratios 95%CI
+  library(MASS)
   glmFun <- function(m, n){
     # calculate the glm between profile and group information
     #
@@ -190,7 +161,7 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
     #   n:  taxonomy to be glm
     #
     # Returns:
-    #   the glm result of between taxonomy group
+    #   the rlm result of between taxonomy group
     n[n==0] <- min(n[n!=0])
     dat.glm <- data.frame(group=m, marker=log(n)) %>% na.omit()
     model <- summary(rlm(group ~ marker, data = dat.glm,
@@ -201,7 +172,7 @@ wilcox_sign <- function(physeq, DNAID, PID, GROUP,
     return(res)
   }
 
-  glm_res <- t(apply(dat.prf.cln, 2, function(x, group){
+  glm_res <- t(apply(prf, 2, function(x, group){
     res <- glmFun(group, as.numeric(x))
     return(res)
   }, group = dat.phe.cln[, idx]))

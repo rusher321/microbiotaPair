@@ -229,11 +229,10 @@ features <- function(trainx, trainy, foldNum, repeatNum){
   }
 
   if(foldNum == "leaveone"){
-　　ctrl = rfeControl(functions = rfFuncs,
-　　                      #  rerank = TRUE, # iteration produce to recaluate the feature importance
-　　                      method = "cv", number = numsample, repeats = repeatNum,
-　　                      verbose = FALSE, returnResamp = "all", saveDetails = T,
-　　                      allowParallel=T)
+	ctrl = rfeControl(functions = rfFuncs, 
+		method = "cv", number = numsample, repeats = repeatNum,
+		verbose = FALSE, returnResamp = "all", saveDetails = T,
+		allowParallel=T)
   }else{
     ctrl = rfeControl(functions = rfFuncs,
                       #  rerank = TRUE, # iteration produce to recaluate the feature importance
@@ -287,7 +286,7 @@ testdir <- function(data){
     x <- data[,i]
     y <- data$y
     meanr <- tapply(rank(x), y, mean)
-    dir[i] <- ifelse(meanr[1] > meanr[2], "low", "high")
+    dir[i] <- ifelse(meanr[1] > meanr[2], factorLev[0], factorLev[1])
     pvalue <- wilcox.test(x~y)$p.value
     dir[i] <- ifelse(pvalue <0.05, dir[i], "none")
   }
@@ -366,8 +365,6 @@ perfPlot <- function(randomRes, title){
 }
 
 
-
-<<<<<<< Updated upstream
 randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
 
 
@@ -550,205 +547,6 @@ randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, 
 
 }
 
-=======
-# randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
-#
-#
-#   #  feature selection function
-#
-#   features <- function(trainx, trainy, repeatNum){
-#     # make sure data & config 's sample is same
-#
-#     index <- nearZeroVar(trainx)  # find the zero-variance var
-#     if(length(index) == 0){data.cle <- trainx}else{data.cle <- trainx[, -index]}
-#     # if feature over 100, only add 10 repeats compution
-#     if(ncol(data.cle) >= 100){
-#       subsets <- c(1:100,seq(101, ncol(data.cle), by=ceiling(ncol(data.cle)-100)/10))
-#     }else{
-#       subsets <- c(1:ncol(data.cle))
-#     }
-#     ctrl = rfeControl(functions = rfFuncs, method = "cv", repeats = repeatNum,
-#                       verbose = FALSE, returnResamp = "final", saveDetails = T,
-#                       allowParallel=T)
-#     Profile = rfe(data.cle, trainy, sizes = subsets, rfeControl = ctrl)
-#     return(Profile)
-#   }
-#
-#
-#   model <- function(trainx, trainy, foldNum){
-#     # set the mtry
-#     if(ncol(trainx) <= 4 || is.null(ncol(trainx))){
-#       grid <- expand.grid(mtry = 2)
-#     }else{
-#       grid <- expand.grid(mtry = seq(2,floor(sqrt(ncol(trainx))), by=1))
-#     }
-#     ctrl <- trainControl(method="repeatedcv", number = foldNum, repeats = 10,
-#                          summaryFunction=twoClassSummary,  # Use AUC to pick the best model
-#                          savePredictions=T,
-#                          classProbs=TRUE,
-#                          sampling = "up")
-#
-#     rf  <- train(trainx, trainy,
-#                  method = "rf",   # Radial kernel
-#                  tuneGrid = grid, #
-#                  trControl=ctrl)
-#
-#     return(rf)
-#   }
-#
-#   # ready data
-#   id <- intersect(rownames(data), rownames(metadata))
-#   trainy <- metadata[id , response]
-#   trainx <- data[id, ]
-#   naindex <- which(is.na(trainy)) # rm the NA response
-#   if(length(naindex)!=0){
-#     trainx <- trainx[-naindex, ]
-#     trainy <- trainy[-naindex]
-#   }
-#   trainy <- as.factor(trainy)
-#   levels(trainy) <- factorLev
-#
-#   # split the data & get the cv dataset
-#   if(foldNum == "leaveone"){
-#     foldNum <- length(trainy)
-#   }
-#   foldlist <- createFolds(trainy, foldNum)
-#
-#   # output
-#   featurelist <- list()
-#   pred <- c()
-#   ture <- c()
-#
-#   for(i in 1:foldNum){
-#     trainxsub <- trainx[-foldlist[[i]], ]
-#     trainysub <- trainy[-foldlist[[i]]]
-#     testxsub <- trainx[foldlist[[i]], ]
-#     testysub <- trainy[foldlist[[i]]]
-#
-#     featureRes <- features(trainx = trainxsub, trainy = trainysub, repeatNum = repeatNum)
-#     opt <- featureRes$optVariables
-#     mod <- model(trainx = trainxsub[,opt, drop=F], trainy = trainysub, foldNum = 5)
-#
-#     featurelist[[i]] <- mod$finalModel$importance
-#     pred <- c(pred, predict(mod, testxsub[, opt, drop=F],type="prob")[,2])
-#     ture <- c(ture, testysub)
-#
-#   }
-#
-#   preddat <- data.frame(predV = pred, obsV = ture)
-#   out <- list(feature = featurelist,  cvres = preddat)
-#
-#   return(out)
-#
-# }randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
-#
-#
-#   #  feature selection function
-#
-#   features <- function(trainx, trainy, repeatNum){
-#     # make sure data & config 's sample is same
-#
-#     index <- nearZeroVar(trainx)  # find the zero-variance var
-#     if(length(index) == 0){data.cle <- trainx}else{data.cle <- trainx[, -index]}
-#     # if feature over 100, only add 10 repeats compution
-#     if(ncol(data.cle) >= 100){
-#       subsets <- c(1:100,seq(101, ncol(data.cle), by=ceiling(ncol(data.cle)-100)/10))
-#     }else{
-#       subsets <- c(1:ncol(data.cle))
-#     }
-#     ctrl = rfeControl(functions = rfFuncs, method = "cv", repeats = repeatNum,
-#                       verbose = FALSE, returnResamp = "final", saveDetails = T,
-#                       allowParallel=T)
-#     Profile = rfe(data.cle, trainy, sizes = subsets, rfeControl = ctrl)
-#     return(Profile)
-#   }
-#
-#
-#   model <- function(trainx, trainy, foldNum){
-#     # set the mtry
-#     if(ncol(trainx) <= 4 || is.null(ncol(trainx))){
-#       grid <- expand.grid(mtry = 2)
-#     }else{
-#       grid <- expand.grid(mtry = seq(2,floor(sqrt(ncol(trainx))), by=1))
-#     }
-#     ctrl <- trainControl(method="repeatedcv", number = foldNum, repeats = 10,
-#                          summaryFunction=twoClassSummary,  # Use AUC to pick the best model
-#                          savePredictions=T,
-#                          classProbs=TRUE,
-#                          sampling = "up")
-#
-#     rf  <- train(trainx, trainy,
-#                  method = "rf",   # Radial kernel
-#                  tuneGrid = grid, #
-#                  trControl=ctrl)
-#
-#     return(rf)
-#   }
-#
-#   # ready data
-#   id <- intersect(rownames(data), rownames(metadata))
-#   trainy <- metadata[id , response]
-#   trainx <- data[id, ]
-#   naindex <- which(is.na(trainy)) # rm the NA response
-#   if(length(naindex)!=0){
-#     trainx <- trainx[-naindex, ]
-#     trainy <- trainy[-naindex]
-#   }
-#   trainy <- as.factor(trainy)
-#   levels(trainy) <- factorLev
-#
-#   # split the data & get the cv dataset
-#   if(foldNum == "leaveone"){
-#     foldNum <- length(trainy)
-#   }
-#   foldlist <- createFolds(trainy, foldNum)
-#
-#   # output
-#   featurelist <- list()
-#   pred <- c()
-#   ture <- c()
-#
-#   for(i in 1:foldNum){
-#     trainxsub <- trainx[-foldlist[[i]], ]
-#     trainysub <- trainy[-foldlist[[i]]]
-#     testxsub <- trainx[foldlist[[i]], ]
-#     testysub <- trainy[foldlist[[i]]]
-#
-#     featureRes <- features(trainx = trainxsub, trainy = trainysub, repeatNum = repeatNum)
-#     opt <- featureRes$optVariables
-#     mod <- model(trainx = trainxsub[,opt, drop=F], trainy = trainysub, foldNum = 5)
-#
-#     featurelist[[i]] <- mod$finalModel$importance
-#     pred <- c(pred, predict(mod, testxsub[, opt, drop=F],type="prob")[,2])
-#     ture <- c(ture, testysub)
-#
-#   }
-#
-#   preddat <- data.frame(predV = pred, obsV = ture)
-#   out <- list(feature = featurelist,  cvres = preddat)
-#
-#   return(out)
-#
-# }
-#
->>>>>>> Stashed changes
-
-#### 
-   randomForesttwo <- function(x){
-   
-   # feature selection 
-   # rm the zero 
-   # select the lowest wilcox pvalue,  & rmmove the species with the highest correlation value  >  cutoff  (o.6 )
-   # then the second run , until get the top X highest feature 
-     
-       
-   # model on leave one 
-        
-   
-   
-   
-   
-   }
 
 
 

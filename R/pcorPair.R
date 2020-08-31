@@ -32,18 +32,18 @@
 #' metadataVar <- c("BMI", "Glycine")
 #' confounder <- c("Age", "Sex")
 #'
-#' PcorPair(microbiota, metadata, metadataVar, confounder,method = "s")
+#' PcorPair(microbiota, metadata, metadataVar, confounder, method = "s")
 #'
 #' @export
 #'
 
 PcorPair <- function (microbiota, metadata, metadataVar, confounder,
-                      method = "s"){
+                      method = "s", time_varname){
 
   # match the sample ID
   id <- intersect(rownames(microbiota), rownames(metadata))
   dataset <- microbiota[id, ]
-  metadata <- metadata[id, c(metadatavar, confounder, time_varname), drop=F]
+  metadata <- metadata[id, c(metadataVar, confounder, time_varname), drop=F]
   confounderindex <- which(colnames(metadata) %in% confounder)
   time_varnameindex <- which(colnames(metadata) %in% time_varname)
 
@@ -59,6 +59,7 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
   dat <- list()
   meta <- list()
   micro <- list()
+  time_name <- metadata[,time_varnameindex]
   for(i in 1:length(time_name)){
     id[[i]] <- rownames(metadata[metadata[,time_varname]==time_name[i], ])
     dat[[i]] <- datacon[id[[i]], ]
