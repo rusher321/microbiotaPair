@@ -12,6 +12,8 @@ library(rmeta)
 library(tibble)
 library(reshape)
 library(phyloseq)
+source("../R/convert_data_into_phyloseq.R")
+source("../R/config.R")
 ## profile 
 tax <- fread("../data/metaphlan3.merged.abundance.profile.all.tsv", stringsAsFactors = F, data.table = F)
 rownames(tax) <- tax$clade_name
@@ -47,7 +49,7 @@ phylo3 <- data2phyloseq(metadata = metadata, micro = humann2ft, occ = 0.1)
 ```{r, warning=F}
 source("../R/alpha_diversity.R")
 source("../R/plot_alpha_diversity.R")
-source("../R/config.R")
+
 genus_diver <- alpha_diversity(phylo, method = "all", paired = F)[, c(2:5,8)]
 species_diver <- alpha_diversity(phylo2, method = "all", paired = F)[, c(2:5,8)]
 humann_diver <- alpha_diversity(phylo3, method = "all", paired = F)[, c(2:5,8)]
@@ -91,9 +93,12 @@ plot_ordination(ordination.res = humann2_ord, phylores = phylo, method = "NMDS",
 
 ## Composition
 
-```{r, warning=F}
+```{r, warning=F, fig.height= 8 , fig.width=14}
 ## Top10 Genus 
 source("../R/plot_ordination.R")
+library(ggplot2)
+library(RColorBrewer)
+library(ggpubr)
 comtaxTop(dat = splittax$pmv_genus, group = metadata, top = 10, group_var = "Group")
 ## Top10 Species 
 comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "Group")
@@ -107,12 +112,15 @@ comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "G
 source("../R/network.R")
 rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
 rownames(rankclass) <- rankclass$V7
-rankfilter <- tax_table(rankclass[rownames(otu_table(phylo2)), ])
+
+microdata <- otu_table(phylo2)
+rankfilter <- tax_table(rankclass[rownames(microdata), ])
 # result 
 set.seed(000)
-gonet <- sparCCnetwork(microdata  = otu_table(phylo2), rank = rankfilter, 
-                       phemeta = sample_data(phylo2), group = "go", group_var = "Group")
-g1net <- sparCCnetwork(microdata = otu_table(phylo2), rank = rankfilter, 
+rownames(microdata) <- rownames(rankfilter)
+gonet <- sparCCnetwork(microdata  = microdata, rank = rankfilter, 
+                       phemeta = sample_data(phylo2), group = "g0", group_var = "Group")
+g1net <- sparCCnetwork(microdata =  microdata, rank = rankfilter, 
                        phemeta = sample_data(phylo2), group = "g1", group_var = "Group")
 
 phemeta2 <- sample_data(phylo2)

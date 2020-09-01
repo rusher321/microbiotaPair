@@ -150,6 +150,7 @@ plot_ordination <- function(ordination.res, phylores, method, grouping_column="S
 comtaxTop <- function(dat, group, top, group_var){
 
   # order features
+  library(tidyverse)
   b <- data.frame(
     Max = apply(dat,1,mean)
   ) %>%

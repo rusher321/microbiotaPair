@@ -223,12 +223,12 @@ sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
   library(rmeta)
 
   phe.cln <- sample_data(phemeta[phemeta[, group_var]==group, ])
-  otu.cln <- otudata[,rownames(g1basephe)]
+  otu.cln <- microdata[,rownames(phe.cln)]
   # simulate the count data
   otuN <- t(round(renorm(t(otu.cln))*10^5))
   otuN <- otu_table(otuN, taxa_are_rows = T)
 
-  pylores <- phyloseq(phe.cln, out.cln, rank)
+  pylores <- phyloseq(phe.cln, otu.cln, rank)
 
   # repeat sparCC
   sparccres <- simulateNetwork(dat = t(otuN), repeatN = 100, sampleN = 50)
