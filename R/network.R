@@ -204,6 +204,7 @@ simulateNetwork <- function(dat, repeatN , sampleN){
   # sample the data
   out <- matrix(0, nrow = ncol(dat), ncol = ncol(dat))
   for(i in 1:repeatN){
+	print(i)
     index <- sample(c(1:nrow(dat)), sampleN, replace = T)
     dat2 <- dat[index, ]
     out <- out+sparcc(dat2)$Cor
@@ -231,7 +232,7 @@ sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
   pylores <- phyloseq(phe.cln, otu.cln, rank)
 
   # repeat sparCC
-  sparccres <- simulateNetwork(dat = t(otuN), repeatN = 100, sampleN = 50)
+  sparccres <- simulateNetwork(dat = t(otuN), repeatN = 20, sampleN = 30)
   sparcc.graph <- abs(sparccres) >= 0.3
   diag(sparcc.graph) <- 0
   sparcc.graph2 <- Matrix(sparcc.graph, sparse=TRUE)

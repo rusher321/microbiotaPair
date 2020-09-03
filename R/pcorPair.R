@@ -59,7 +59,7 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
   dat <- list()
   meta <- list()
   micro <- list()
-  time_name <- metadata[,time_varnameindex]
+  time_name <- sort(unique(as.character(metadata[,time_varnameindex])))
   for(i in 1:length(time_name)){
     id[[i]] <- rownames(metadata[metadata[,time_varname]==time_name[i], ])
     dat[[i]] <- datacon[id[[i]], ]
@@ -75,6 +75,7 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
   # analysis
   for(m in 1:length(time_name)){
     for (i in 1:c(ncol(metadatafilter))) {
+		print(i)
       for (j in 1:ncol(dataset)) {
         dat_com <- data.frame(x = meta[[m]][, i], y = micro[[m]][, j], dat[[m]])
         dat_com <- dat_com[!apply(dat_com, 1, function(x) {any(is.na(x))}), ]

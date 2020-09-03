@@ -28,7 +28,8 @@ colnames(humann2) <- gsub("_Abundance", "", colnames(humann2))
 # rm unmapped & unintergrate & scale
 humann2f <- humann2[-c(1:2),]
 humann2ft <- apply(humann2f, 2, function(x){x/sum(x)})
-
+pathway_name <- data.frame(pathway_name = rownames(humann2ft)) # rename the feature id 
+rownames(pathway_name) <- rownames(humann2ft) <- paste0("pathway", seq(1:nrow(pathway_name)))
 
 ## metadata 
 metadata <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 2)
@@ -80,13 +81,20 @@ species_ord <- ordination(physeq = phylo2, which_distance = "bray", method = "NM
 plot_ordination(ordination.res = species_ord, phylores = phylo, method = "NMDS", 
                         grouping_column = group_varname, paired = F)
 
-# humann2 
+# humann2 / pathway 
 
 humann2_ord <- ordination(physeq = phylo3, which_distance = "bray", method = "NMDS",
                         grouping_column = group_varname)
 
 plot_ordination(ordination.res = humann2_ord, phylores = phylo, method = "NMDS", 
                         grouping_column = group_varname, paired = F)
+
+# humann2 / module 
+
+
+
+# humann2 / ko 
+
 
 
 ```
@@ -107,13 +115,17 @@ comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "G
 
 ## Network 
 
-```{r}
+```{r, fig.height= 6 , fig.width=8}
 ### sparCC (spearman)
 source("../R/network.R")
+library(Matrix)
 rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
 rownames(rankclass) <- rankclass$V7
 
 microdata <- otu_table(phylo2)
+# >0.5
+occindex <- apply(microdata, 1, function(x){sum(x!=0)/length(x)})>0.5
+microdata <- microdata[occindex, ]
 rankfilter <- tax_table(rankclass[rownames(microdata), ])
 # result 
 set.seed(000)
@@ -123,18 +135,25 @@ gonet <- sparCCnetwork(microdata  = microdata, rank = rankfilter,
 g1net <- sparCCnetwork(microdata =  microdata, rank = rankfilter, 
                        phemeta = sample_data(phylo2), group = "g1", group_var = "Group")
 
-phemeta2 <- sample_data(phylo2)
-phemeta2$Group2 <- "all"
-allnet <- sparCCnetwork(microdata = otu_table(phylo2), rank = rankfilter, 
-                       phemeta = sample_data(phylo2), group = "all", group_var = "Group2")
+# phemeta2 <- sample_data(phylo2)
+# phemeta2$Group2 <- "all"
+# allnet <- sparCCnetwork(microdata = otu_table(phylo2), rank = rankfilter, 
+#                        phemeta = sample_data(phylo2), group = "all", group_var = "Group2")
 # stat
 
-
 # plot
-cowplot::plot_grid(g0net[[1]], g1net[[1]],  allnet[[1]],
-                          labels = c("A", "B", "C"), ncol = 2, align = "h")
+cowplot::plot_grid(gonet[[1]], g1net[[1]],
+  labels = c("A", "B"), ncol = 2, align = "h")
 
-
+# degree distribution 
+graph <- adj2igraph(Matrix(gonet[[2]], sparse=TRUE))
+graph2 <- adj2igraph(Matrix(g1net[[2]], sparse=TRUE))
+degreeres <- data.frame(g0 = degree(graph), g1 = degree(graph2), tax = rankfilter[,7])
+order(apply(degreeres[,1:2], 1,sum), decreasing = T) -> orderindex
+qdat2 <- melt(degreeres[orderindex[1:20],])
+p <- ggplot(qdat2, aes(x = ta7, y =  value ,  group= variable, color = variable))+geom_line()+geom_point()+ scale_color_manual(values = time_colour)+
+     theme_classic()+theme(axis.text.x = element_text(angle = 60, hjust = 0.5, vjust = 0.5))+ylab("Degree")
+p  
 
 ### BAnOCC 
 
@@ -152,11 +171,11 @@ source("../R/Wilcoxon_Sign_Rank_Test.R")
 com_genus <- compare_two(physeq = phylo, PID = NULL, GROUP = "Group", grp1 = "g0",
                          grp2 =  "g1", paired = F, occ = 0.1)
 
-
+write.csv(com_genus, "genus_compare.csv", quote = F)
 ### species 
 com_species <- compare_two(physeq = phylo2, PID = NULL, GROUP = "Group", grp1 = "g0",
                          grp2 =  "g1", paired = F, occ = 0.1)
-
+write.csv(com_species, "species_compare.csv", quote = F)
 
 
 
@@ -166,8 +185,16 @@ com_species <- compare_two(physeq = phylo2, PID = NULL, GROUP = "Group", grp1 = 
 ## Function 
 
 ```{r}
-### humann2 
+### humann2 / pathway 
 com_humann2 <- compare_two(physeq = phylo3, PID = NULL, GROUP = "Group", grp1 = "g0",grp2 =  "g1", paired = F, occ = 0.1)
+write.csv(com_humann2, "humann2_compare.csv", quote = F)
+
+### humann2 / module 
+
+
+
+### humann2 / ko
+
 
 ```
 
@@ -182,16 +209,22 @@ source("../R/pcorPair.R")
 metadataVar <- colnames(metadata)[6:70]
 confounder <- c("sex", "age")
 
+# select the occrance >0.5 species 
+
+microdata <-  otu_table(phylo2) %>% t() %>%as.data.frame()
+occindex <- apply(microdata, 1, function(x){sum(x!=0)/length(x)})>0.5
+microdataf <- microdata[ ,occindex]
 # split g0 & g1
-res <- PcorPair(microbiota = otu_table(phylo2) %>% t() %>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
+res <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
 
 # all 
 metadata$Group2 <- "all"
 
-res2 <- PcorPair(microbiota = otu_table(phylo2) %>% t()%>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+res2 <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
 
 # plot 
-
+library(pheatmap)
+corPlot(res2[[1]], cutoff = 0.01, adjust = F, tr=T)
 
 ```
 
@@ -220,18 +253,19 @@ source("../R/predict.R")
 library(caret)
 # to generate the  classified model 
 sele_spe <- as.data.frame(t(splittax$pmv_species[com_species[com_species$Pvalue <= 0.05, "type"], ]))  
-
-humann2ft2 <- data.frame(t(humann2ft))
-sele_human <- humann2ft2[, com_humann2[com_humann2$Pvalue <= 0.05, "type"]]
+sele_human <- t(humann2ft[com_humann2[com_humann2$Pvalue <= 0.05, "type"], ])
 
 # species model
 phe <- metadata[rownames(sele_spe), ]
-res_species <- randomForestTwo(data = sele_spe, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
-plot1 <- perfPlot(res_species, title = "Group")
+res_species <- randomForestTwo(data = sele_spe, metadata = phe, response = "Group", repeatNum = 10, foldNum = 5, factorLev = c("g0", "g1"))
+
+library(plotROC)
+library(pROC)
+perfPlot(res_species, title = "Group")
 
 
 # pathway model 
-res_pathway <- randomForestTwo(data = all, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
-plot2 <- perfPlot(res_pathway, title = "Group")
+# res_pathway <- randomForestTwo(data = all, metadata = phe, response = "Group", repeatNum = 100, foldNum = "leaveone", factorLev = c("g0", "g1"))
+# plot2 <- perfPlot(res_pathway, title = "Group")
 
 ```

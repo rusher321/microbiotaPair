@@ -315,7 +315,7 @@ testdir <- function(data){
     x <- data[,i]
     y <- data$y
     meanr <- tapply(rank(x), y, mean)
-    dir[i] <- ifelse(meanr[1] > meanr[2], factorLev[0], factorLev[1])
+    dir[i] <- ifelse(meanr[1] > meanr[2], factorLev[1], factorLev[2])
     pvalue <- wilcox.test(x~y)$p.value
     dir[i] <- ifelse(pvalue <0.05, dir[i], "none")
   }
