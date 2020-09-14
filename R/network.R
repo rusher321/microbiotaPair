@@ -246,4 +246,71 @@ sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
 }
 
 
+####
+
+
+network_sta <- function(cor_matrix, cutoff = 0.3){
+
+  #cutoff <- 0.3
+  library(igraph)
+
+  diag(cor_matrix) <- 0
+  g0_trans <- ifelse(cor_matrix < -cutoff & cor_matrix < 0 , -1,
+                     ifelse(cor_matrix > cutoff & cor_matrix > 0, 1, 0))
+  g0_net <- graph_from_incidence_matrix(g0_trans)
+
+  # output
+  range_g0 <- quantile(cor_matrix[lower.tri(cor_matrix)])
+  edge_g0 <-  c(sum(g0_trans[lower.tri(g0_trans)]==1), sum(g0_trans[lower.tri(g0_trans)]==-1))
+  names(edge_g0) <- c("pos", "neg")
+  degree_g0 <- degree(g0_net)
+  betwenness_g0 <- betweenness(g0_net)
+  closeness_g0 <- closeness(g0_net)
+
+  out <- list(edge_g0, range_g0, degree_g0, betwenness_g0, closeness_g0)
+  names(out) <- c("edge", "range", "degree", "betwenness", "closeness")
+
+  return(out)
+
+}
+
+
+
+# plot
+network_tran <- function(adj, abun, rankinf){
+
+  ### edge inf
+  n <- ncol(adj)
+  node <- colnames(adj)
+  from <- c()
+  to <- c()
+  edge.width <- edge.colour <- c()
+  for(i in 1:n){
+    for(j in 2:n){
+      from <- c(from, node[i])
+      to <- c(to, node[j])
+      edge.width <- c(edge.width, adj[i,j])
+      edge.colour <- c(edge.colour, adj[i,j])
+    }
+  }
+
+  edge_inf <- data.frame(from, to, edge.width, edge.colour)
+
+  ### node inf
+  node_inf <- as.data.frame(apply(abun, 2, mean))
+  colnames(node_inf) <- "node.size"
+  node_inf$node <- rownames(node_inf)
+  node_inf$colour <- rankinf[rownames(node_inf),]
+
+  out <- list(edge_inf, node_inf)
+
+  return(out)
+
+}
+
+
+
+
+
+
 

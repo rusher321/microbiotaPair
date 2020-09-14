@@ -12,6 +12,7 @@ library(rmeta)
 library(tibble)
 library(reshape)
 library(phyloseq)
+library(ggplot2)
 source("../R/convert_data_into_phyloseq.R")
 source("../R/config.R")
 ## profile 
@@ -20,7 +21,7 @@ rownames(tax) <- tax$clade_name
 tax <- tax[,-c(1:2)]
 splittax <- splitMetaphlan2(tax, prefix = "pmv")
 
-### function 
+## function 
 humann2 <- fread("../data/humann2_pathabundance_joined_unstratified.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
 rownames(humann2) <- humann2[,1]
 humann2 <- humann2[,-1]
@@ -31,14 +32,33 @@ humann2ft <- apply(humann2f, 2, function(x){x/sum(x)})
 pathway_name <- data.frame(pathway_name = rownames(humann2ft)) # rename the feature id 
 rownames(pathway_name) <- rownames(humann2ft) <- paste0("pathway", seq(1:nrow(pathway_name)))
 
+## ko
+ko <- fread("../data/humann2.uniref90_ko.joined_unstratified.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
+rownames(ko) <- ko[,1]
+ko <- ko[,-1]
+colnames(ko) <- gsub("-RPKs", "", colnames(ko))
+ko2 <- ko[-c(1:2), ]
+
+
+## grid 
+grid <- fread("../data/grid.merged.reliable.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
+rownames(grid) <- grid[,1]
+grid <- grid[,-1]
+
+
+
 ## metadata 
 metadata <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 2)
 rownames(metadata) <- metadata$PID
 metadata$Group <- ifelse(metadata$Group == 0, "g0", "g1")
-## generate 
+
+## generate phyloseq
+
 phylo <- data2phyloseq(metadata = metadata, micro = splittax$pmv_genus, occ = 0.1)
 phylo2 <- data2phyloseq(metadata = metadata, micro = splittax$pmv_species, occ = 0.1)
 phylo3 <- data2phyloseq(metadata = metadata, micro = humann2ft, occ = 0.1)
+phylo4 <- data2phyloseq(metadata = metadata, micro = ko2, occ = 0.1)
+phylo5 <- data2phyloseq(metadata = metadata, micro = grid, occ = 0.1)
 
 
 ```
@@ -54,11 +74,13 @@ source("../R/plot_alpha_diversity.R")
 genus_diver <- alpha_diversity(phylo, method = "all", paired = F)[, c(2:5,8)]
 species_diver <- alpha_diversity(phylo2, method = "all", paired = F)[, c(2:5,8)]
 humann_diver <- alpha_diversity(phylo3, method = "all", paired = F)[, c(2:5,8)]
+ko_diver <- alpha_diversity(phylo4, method = "all", paired = F)[, c(2:5,8)]
 # plot 
 
 plot_alpha_diversity(species_diver, pair = F)
 plot_alpha_diversity(genus_diver, pair = F)
 plot_alpha_diversity(humann_diver, pair = F)
+plot_alpha_diversity(ko_diver, pair = F)
 ```
 
 
@@ -94,7 +116,11 @@ plot_ordination(ordination.res = humann2_ord, phylores = phylo, method = "NMDS",
 
 
 # humann2 / ko 
+ko_ord <- ordination(physeq = phylo4, which_distance = "bray", method = "NMDS",
+                        grouping_column = group_varname)
 
+plot_ordination(ordination.res = ko_ord, phylores = phylo, method = "NMDS", 
+                        grouping_column = group_varname, paired = F)
 
 
 ```
@@ -110,6 +136,15 @@ library(ggpubr)
 comtaxTop(dat = splittax$pmv_genus, group = metadata, top = 10, group_var = "Group")
 ## Top10 Species 
 comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "Group")
+
+
+## Generate 2 group mean 
+metadata_s <- data.frame(Group = c("g0", "g1"))
+rownames(metadata_s) <- c("g0", "g1")
+pmv_genus_g <- as.data.frame(t(apply(splittax$pmv_genus, 1, function(x){tapply(x, metadata$Group, mean)})))
+
+comtaxTop(dat = pmv_genus_g, group = metadata_s, top = 10, group_var = "Group")
+
 
 ```
 
@@ -155,10 +190,96 @@ p <- ggplot(qdat2, aes(x = ta7, y =  value ,  group= variable, color = variable)
      theme_classic()+theme(axis.text.x = element_text(angle = 60, hjust = 0.5, vjust = 0.5))+ylab("Degree")
 p  
 
-### BAnOCC 
 
 
 ```
+
+```{r}
+### BAnOCC 
+library(banocc)
+library(ggraph)
+
+
+source("../R/network.R")
+rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
+rownames(rankclass) <- rankclass$V7
+species_d <- otu_table(phylo2)
+species_input <- renorm(t(species_d))
+
+g0 <- species_input[metadata[metadata$Group=="g0", "PID"], ]
+g1 <- species_input[metadata[metadata$Group=="g1", "PID"], ]
+
+
+############ g0 #############
+compiled_banocc_model <- rstan::stan_model(model_code = banocc::banocc_model) 
+
+g0_fit     <- banocc::run_banocc(C = g0, compiled_banocc_model=compiled_banocc_model, init = init)
+g0_ig <- banocc::get_banocc_output(banoccfit=g0_fit,
+                                       eval_convergence = FALSE)
+g0_output <- g0_ig$Estimates.median
+#write.csv(g0_ig$Estimates.median, "g0_igraph.csv", quote = F)
+
+# here output edge ;range; degree; betwness ; closeness
+g0_sta <- network_sta(g0_output, cutoff = 0.3) 
+
+# here plot the network
+g0_net2 <- network_tran(g0_output, g0, rankclass[,"V2", drop=F])
+graph_data <- tidygraph::tbl_graph(nodes = g0_net2[[2]], edges =g0_net2[[1]], 
+                                   directed = FALSE)
+node_name <- g0_net2[[2]]$node
+g0_networkplot <- ggraph(graph = graph_data, layout = "auto", circular = TRUE) +
+  geom_edge_arc(aes(edge_colour = edge.colour, edge_width = edge.width)) +
+scale_edge_colour_gradient2(low = "#155F83FF", mid = "white", high = "#800000FF") +
+  scale_edge_width_continuous(range = c(0.2,2)) +
+  geom_node_point(aes(colour = colour, size = node.size)) +
+  scale_size_continuous(range = c(5,10)) +
+  #scale_colour_manual(values = c("Class A" = "#8A9045FF", "Class B" = "#155F83FF")) +
+  theme_void() +
+  geom_node_text(aes(x = x,
+                     y = y,
+                     label = node_name,
+                     colour = colour), 
+                 size = 3.5) 
+ggsave(g0_networkplot, "g0_network.pdf", width = 20, height = 20)
+
+############ g1 ################
+
+g1_fit     <- banocc::run_banocc(C = g1, compiled_banocc_model=compiled_banocc_model, init = init)
+g1_ig <- banocc::get_banocc_output(banoccfit=g1_fit,
+                                       eval_convergence = FALSE)
+g1_output <- g1_ig$Estimates.median
+#write.csv(g1_ig$Estimates.median, "g1_igraph.csv", quote = F)
+
+# here output edge ;range; degree; betwness ; closeness
+g1_sta <- network_sta(g1_output, cutoff = 0.3) 
+
+# here plot the network
+g1_net2 <- network_tran(g1_output, g1, rankclass[,"V2", drop=F])
+graph_data <- tidygraph::tbl_graph(nodes = g1_net2[[2]], edges =g1_net2[[1]], 
+                                   directed = FALSE)
+node_name <- g1_net2[[2]]$node
+g1_networkplot <- ggraph(graph = graph_data, layout = "auto", circular = TRUE) +
+  geom_edge_arc(aes(edge_colour = edge.colour, edge_width = edge.width)) +
+scale_edge_colour_gradient2(low = "#155F83FF", mid = "white", high = "#800000FF") +
+  scale_edge_width_continuous(range = c(0.2,2)) +
+  geom_node_point(aes(colour = colour, size = node.size)) +
+  scale_size_continuous(range = c(5,10)) +
+  #scale_colour_manual(values = c("Class A" = "#8A9045FF", "Class B" = "#155F83FF")) +
+  theme_void() +
+  geom_node_text(aes(x = x,
+                     y = y,
+                     label = node_name,
+                     colour = colour), 
+                 size = 3.5) 
+ggsave(g1_networkplot, "g1_network.pdf", width = 20, height = 20)
+
+
+############ 
+save(list(g0sta, g1sta), file = "network.stat.RData")
+
+```
+
+
 
 # 01.Compare analysis
 
@@ -177,6 +298,10 @@ com_species <- compare_two(physeq = phylo2, PID = NULL, GROUP = "Group", grp1 = 
                          grp2 =  "g1", paired = F, occ = 0.1)
 write.csv(com_species, "species_compare.csv", quote = F)
 
+### grid
+com_grid <- compare_two(physeq = phylo5, PID = NULL, GROUP = "Group", grp1 = "g0",
+                         grp2 =  "g1", paired = F, occ = 0.1)
+write.csv(com_grid, "grid_compare.csv", quote = F)
 
 
 ```
@@ -194,7 +319,8 @@ write.csv(com_humann2, "humann2_compare.csv", quote = F)
 
 
 ### humann2 / ko
-
+com_ko <- compare_two(physeq = phylo3, PID = NULL, GROUP = "Group", grp1 = "g0",grp2 =  "g1", paired = F, occ = 0.1)
+write.csv(com_ko, "ko_compare.csv", quote = F)
 
 ```
 
@@ -204,23 +330,30 @@ write.csv(com_humann2, "humann2_compare.csv", quote = F)
 ## Species vs clinical 
 
 ```{r}
-# partial spearman correlation
-source("../R/pcorPair.R")
-metadataVar <- colnames(metadata)[6:70]
-confounder <- c("sex", "age")
-
-# select the occrance >0.5 species 
 
 microdata <-  otu_table(phylo2) %>% t() %>%as.data.frame()
-occindex <- apply(microdata, 1, function(x){sum(x!=0)/length(x)})>0.5
+occindex <- apply(microdata, 1, function(x){sum(x!=0)/length(x)})>0.1 # select the occrance >0.5 species 
 microdataf <- microdata[ ,occindex]
-# split g0 & g1
-res <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
+
+metadata2 <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 3)
+########## spearman correlation #####################
+res1_spearman <- rmeta::myspearman()
+
+
+
+
+######### partial spearman correlation ##############
+source("../R/pcorPair.R")
+metadataVar <- colnames(metadata2)
+confounder <- c("BMI")
+# # split g0 & g1
+# res <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
 
 # all 
-metadata$Group2 <- "all"
+metadata2$Group2 <- "all"
+res2 <- PcorPair(microbiota = microdataf, metadata = metadata2, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
 
-res2 <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+
 
 # plot 
 library(pheatmap)
