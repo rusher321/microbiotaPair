@@ -36,7 +36,7 @@ rownames(pathway_name) <- rownames(humann2ft) <- paste0("pathway", seq(1:nrow(pa
 ko <- fread("../data/humann2.uniref90_ko.joined_unstratified.tsv", stringsAsFactors = F, data.table = F, check.names = F, quote = "")
 rownames(ko) <- ko[,1]
 ko <- ko[,-1]
-colnames(ko) <- gsub("-RPKs", "", colnames(ko))
+colnames(ko) <- gsub("_Abundance-RPKs", "", colnames(ko))
 ko2 <- ko[-c(1:2), ]
 
 
@@ -329,35 +329,47 @@ write.csv(com_ko, "ko_compare.csv", quote = F)
 
 ## Species vs clinical 
 
-```{r}
+```{r, warning=F}
 
 microdata <-  otu_table(phylo2) %>% t() %>%as.data.frame()
 occindex <- apply(microdata, 1, function(x){sum(x!=0)/length(x)})>0.1 # select the occrance >0.5 species 
 microdataf <- microdata[ ,occindex]
 
-metadata2 <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 3)
+metadata2 <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 3, rowNames=T)
+rownames(metadata2) <- metadata2$PID
+metadata2 <- metadata2[, -1]
 ########## spearman correlation #####################
-res1_spearman <- rmeta::myspearman()
-
-
-
+source("../R/basic.R")
+res1_spearman <- myspearman(phe = metadata2, species =t(microdataf), method = "s")
+write.csv(res1_spearman, "clinical_species_spearman.csv", quote = F)
 
 ######### partial spearman correlation ##############
 source("../R/pcorPair.R")
-metadataVar <- colnames(metadata2)
+library(ppcor)
+
+metadataVar <- colnames(metadata2)[-1]
 confounder <- c("BMI")
 # # split g0 & g1
 # res <- PcorPair(microbiota = microdataf, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
-
 # all 
 metadata2$Group2 <- "all"
-res2 <- PcorPair(microbiota = microdataf, metadata = metadata2, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
-
+res2_pcor <- PcorPair(microbiota = microdataf, metadata = metadata2, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+write.csv(res2_pcor, "clinical_species_pcor.csv", quote = F)
 
 
 # plot 
 library(pheatmap)
-corPlot(res2[[1]], cutoff = 0.01, adjust = F, tr=T)
+pdf("clinical.species.spearman.pdf", width = 20, height = 40)
+corPlot(res1_spearman, cutoff = 1, adjust = F, tr=F)
+dev.off()
+
+
+
+pdf("clinical.species.pcor.pdf", width = 20, height = 40)
+corPlot(res2_pcor[[1]], cutoff = 1, adjust = F, tr=F)
+dev.off()
+
+
 
 ```
 
@@ -365,13 +377,44 @@ corPlot(res2[[1]], cutoff = 0.01, adjust = F, tr=T)
 ## Pathway vs clinical 
 
 ```{r}
+pathData <- otu_table(phylo3) %>% t()%>%as.data.frame()
+metadata2 <- openxlsx::read.xlsx("../data/metadata.xlsx", sheet = 3, rowNames=T)
+rownames(metadata2) <- metadata2$PID
+metadata2 <- metadata2[, -1]
+########## spearman correlation #####################
+source("../R/basic.R")
+res1_spearman <- myspearman(phe = metadata2, species =t(pathData), method = "s")
+rownames(res1_spearman) <- as.character(pathway_name[rownames(res1_spearman),])
+openxlsx::write.xlsx(res1_spearman, "clinical_pathway_spearman.xlsx", rowNames=T)
+
+
+######### patital spearmna correlation ##############
+source("../R/pcorPair.R")
+library(ppcor)
 # split g0 & g1
-res <- PcorPair(microbiota = otu_table(phylo3) %>% t() %>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
+# res <- PcorPair(microbiota = otu_table(phylo3) %>% t() %>%as.data.frame(), metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group")
 
 # all 
-metadata$Group2 <- "all"
-speciesData <- otu_table(phylo3) %>% t()%>%as.data.frame()
-res2 <- PcorPair(microbiota = speciesData, metadata = metadata, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+confounder <- "BMI"
+metadataVar <- colnames(metadata2)[-1]
+
+metadata2$Group2 <- "all"
+res2_pcor <- PcorPair(microbiota = pathData, metadata = metadata2, metadataVar = metadataVar, confounder = confounder,method = "s", time_varname = "Group2")
+rownames(res2_pcor[[1]]) <- as.character(pathway_name[rownames(res2_pcor[[1]]),])
+
+openxlsx::write.xlsx(res2_pcor[[1]], "clinical_pathway_pcor.xlsx", rowNames=T)
+
+# plot 
+library(pheatmap)
+pdf("clinical.pathway.spearman.pdf", width = 20, height = 50)
+corPlot(res1_spearman, cutoff = 1, adjust = F, tr=F)
+dev.off()
+
+
+
+pdf("clinical.pathway.pcor.pdf", width = 20, height = 50)
+corPlot(res2_pcor[[1]], cutoff = 1, adjust = F, tr=F)
+dev.off()
 
 
 ```

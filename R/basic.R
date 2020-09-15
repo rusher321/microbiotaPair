@@ -154,6 +154,49 @@ rocPlot2 <- function(response, predict, title){
 }
 
 
+myspearman <- function(phe, species, method = "s"){
+
+
+  id <- intersect(rownames(phe), colnames(species))
+  phe <- phe[id, ]
+  species.g <- species[ ,id]
+
+  pro.n <- nrow(species.g)
+  phe.n <- ncol(phe)
+  out.s <- matrix("NA", pro.n, phe.n*2)
+  rownames(out.s) <- rownames(species.g)
+  colnames(out.s) <- rep("estimate", phe.n*2)
+
+  for (i in 1:phe.n){
+
+    x <- as.numeric(phe[,i] )
+    print(length(x))
+    colnames(out.s)[i*2-1] <- paste0(colnames(phe)[i], "_estimate")
+    colnames(out.s)[i*2] <- paste0(colnames(phe)[i], "_p.value")
+
+    for (j in 1:pro.n){
+      y <- as.numeric(species.g[j,])
+      # rm NA
+      id <- !is.na(x) & !is.na(y)
+      cor.s <- cor.test(x[id],y[id],method = method)
+      out.s[j,(i*2-1):(i*2)] <- c(cor.s$estimate, cor.s$p.value)
+
+    }
+
+  }
+
+  out2 <- apply(out.s, 2, as.numeric)
+  rownames(out2) <- rownames(out.s)
+  return(out2)
+
+
+}
+
+
+
+
+
+
 
 
 

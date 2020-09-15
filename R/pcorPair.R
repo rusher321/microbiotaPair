@@ -51,7 +51,7 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
     stop("please check the confounder variable")
   }
   # ready the data
-  datacon <- metadata[, confounderindex]
+  datacon <- metadata[, confounderindex, drop=F]
   metadatafilter <- metadata[, -c(confounderindex, time_varnameindex)]
 
   # split the baseline & treatment based on your timevar
@@ -62,22 +62,22 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
   time_name <- sort(unique(as.character(metadata[,time_varnameindex])))
   for(i in 1:length(time_name)){
     id[[i]] <- rownames(metadata[metadata[,time_varname]==time_name[i], ])
-    dat[[i]] <- datacon[id[[i]], ]
+    dat[[i]] <- datacon[id[[i]], ,drop=F]
     meta[[i]] <- metadatafilter[id[[i]], ]
     micro[[i]] <- dataset[id[[i]], ]
   }
   # output
   allresult <- list()
-  result <- matrix(NA, nrow = ncol(metadatafilter), ncol = ncol(dataset) * 2)
+  result <- matrix(NA, nrow = ncol(dataset), ncol = ncol(metadatafilter) * 2)
   result <- as.data.frame(result)
-  rownames(result) <- colnames(metadatafilter)
+  rownames(result) <- colnames(dataset)
 
   # analysis
   for(m in 1:length(time_name)){
-    for (i in 1:c(ncol(metadatafilter))) {
+    for (i in 1:c(ncol(dataset))) {
 		print(i)
-      for (j in 1:ncol(dataset)) {
-        dat_com <- data.frame(x = meta[[m]][, i], y = micro[[m]][, j], dat[[m]])
+      for (j in 1:ncol(metadatafilter)) {
+        dat_com <- data.frame(x = meta[[m]][, j], y = micro[[m]][, i], dat[[m]])
         dat_com <- dat_com[!apply(dat_com, 1, function(x) {any(is.na(x))}), ]
 
       # if the variable is constant
@@ -91,7 +91,7 @@ PcorPair <- function (microbiota, metadata, metadataVar, confounder,
           result[i, c((2 * j - 1):(2 * j))] <- c(tmp$estimate,
                                                tmp$p.value)
       }
-      colnames(result)[c((2 * j - 1):(2 * j))] <- paste0(colnames(dataset)[j],
+      colnames(result)[c((2 * j - 1):(2 * j))] <- paste0(colnames(metadatafilter)[j],
                                                          c("_estimate", "_p.value"))
     }
     }
