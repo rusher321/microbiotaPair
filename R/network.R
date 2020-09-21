@@ -257,8 +257,8 @@ network_sta <- function(cor_matrix, cutoff = 0.3){
   diag(cor_matrix) <- 0
   g0_trans <- ifelse(cor_matrix < -cutoff & cor_matrix < 0 , -1,
                      ifelse(cor_matrix > cutoff & cor_matrix > 0, 1, 0))
-  g0_net <- graph_from_incidence_matrix(g0_trans)
-
+  #g0_net <- graph_from_incidence_matrix(g0_trans)
+  g0_net <- adj2igraph(Matrix(g0_trans, sparse=TRUE))
   # output
   range_g0 <- quantile(cor_matrix[lower.tri(cor_matrix)])
   edge_g0 <-  c(sum(g0_trans[lower.tri(g0_trans)]==1), sum(g0_trans[lower.tri(g0_trans)]==-1))
