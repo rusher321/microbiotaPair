@@ -5,7 +5,7 @@
 \title{pairNet
 Pair Networt for a specific species on 2 time point}
 \usage{
-pairNet(microbiota, metadata, cutoff, species, name)
+pairNet(microbiota, metadata, cutoff, species, name, ...)
 }
 \arguments{
 \item{microbiota}{a data.frame object, species profile, row is sample}

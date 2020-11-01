@@ -18,7 +18,7 @@ sample data including the measured variables and categorical information of the 
 data.frame
 }
 \description{
-The hill_number aims to calculate the hill number
+calculate the hill number
 }
 \details{
 10/01/2020  ShenZhen China
@@ -28,5 +28,5 @@ data(physeq_data)
 hill_number(physeq_data, c(1:3))
 }
 \author{
-(s)  Hua Zou, Huahui Ren
+(s)   Huahui Ren
 }

@@ -1,14 +1,15 @@
-#' filterPer
+#' @title filterPer
 #'
-#' @param x  a data.frame object, species abundance profile
-#' @param row a numberic, 1/2
-#' @param percent percent to retain or remove
-#' @param include a logistic , T/F
+#' @param x , a data.frame object, species abundance profile
+#' @param row, a numberic, 1/2
+#' @param percent, percent to retain or remove
+#' @param include, a logistic , T/F
 #'
 #' @return
 #' data.frame
 #'
 #' @examples
+#'
 filterPer <- function (x, row, percent, include = T)
 {
   if (include) {
@@ -33,8 +34,8 @@ filterPer <- function (x, row, percent, include = T)
 
 
 
-#' filterEx
-#' filter the extreme value
+#' @title filterEx
+#' @description filter the extreme value
 #' @param x vector
 #' @param percent.outlier numberic,defalut 0.05
 #'
@@ -49,8 +50,8 @@ filterEx <- function(x, percent.outlier=0.05){
 }
 
 
-#' multiplot
-#' multi plot to combine
+#' @title multiplot
+#' @description combine multi plot to one
 #' @param plotlist
 #' @param file
 #' @param cols
@@ -98,12 +99,21 @@ multiplot <- function(plotlist, file, cols=1, layout=NULL) {
 
 
 
-# ROC
-rocPlot <- function(response, predict){
+
+#' @Title rocPlot
+#' @description
+#' @param response
+#' @param predict
+#'
+#' @return
+#' @export
+#'
+#' @examples
+rocPlot <- function(response, predict, label = "AUC(low vs high) = "){
 
   roc1 <- pROC::roc(response, predict)
   roc1.ci <- round(as.numeric(ci.auc(response , predict)),2)*100
-  title1 <- paste0("AUC(low vs high) = ",roc1.ci[2],"% (",roc1.ci[1],"-",roc1.ci[3],"%)")
+  title1 <- paste0(label, roc1.ci[2],"% (",roc1.ci[1],"-",roc1.ci[3],"%)")
   rocdat1 <- data.frame(roc1$sensitivities, 1-roc1$specificities, title1)
   names(rocdat1) <- c('sen', 'spe', 'group')
 
@@ -128,6 +138,16 @@ rocPlot <- function(response, predict){
 
 
 
+#' @title rocPlot2
+#' @description  use the gg_roc to plot the roc curve
+#' @param response
+#' @param predict
+#' @param title
+#'
+#' @return
+#' @export
+#'
+#' @examples
 rocPlot2 <- function(response, predict, title){
 
   roc1 <- pROC::roc(response, predict)
@@ -154,6 +174,16 @@ rocPlot2 <- function(response, predict, title){
 }
 
 
+#' @Title myspearman
+#' @description  to compute the correlation between the multi species and metadata
+#' @param phe
+#' @param species
+#' @param method
+#'
+#' @return
+#' @export
+#'
+#' @examples
 myspearman <- function(phe, species, method = "s"){
 
 
@@ -165,14 +195,14 @@ myspearman <- function(phe, species, method = "s"){
   phe.n <- ncol(phe)
   out.s <- matrix("NA", pro.n, phe.n*2)
   rownames(out.s) <- rownames(species.g)
-  colnames(out.s) <- rep("estimate", phe.n*2)
+  colnames(out.s) <- rep("pvalue", phe.n*2)
 
   for (i in 1:phe.n){
 
     x <- as.numeric(phe[,i] )
     print(length(x))
     colnames(out.s)[i*2-1] <- paste0(colnames(phe)[i], "_estimate")
-    colnames(out.s)[i*2] <- paste0(colnames(phe)[i], "_p.value")
+    colnames(out.s)[i*2] <-   paste0(colnames(phe)[i], "_p.value")
 
     for (j in 1:pro.n){
       y <- as.numeric(species.g[j,])

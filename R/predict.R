@@ -191,33 +191,6 @@ CvLasso <- function(responsetag, response, microbio, transformM = "IQN",
 
 
 
-
-rocPlot2 <- function(response, predict, title){
-
-  roc1 <- pROC::roc(response, predict)
-  roc1.ci <- round(as.numeric(ci.auc(response , predict)),2)*100
-  title1 <- paste0("AUC(low vs high) = ",roc1.ci[2],"% (",roc1.ci[1],"-",roc1.ci[3],"%)")
-
-  qdat <- data.frame(response = response, predict = predict, group = title1)
-
-  label1 <- title1
-
-  annosize <- 5.5
-
-  p <- ggplot(qdat, aes(m = predict, d = as.numeric(qdat$response)-1, colour = group)) +
-    geom_roc()+
-    mytheme +
-    theme(legend.position = c(0.7,0.25)) +
-    scale_colour_manual(values = c("#000000"),
-                        labels=c(label1)) +
-    guides(colour=guide_legend(title = NULL)) +
-    geom_abline(linetype = 'dashed', colour = 'grey')+ggtitle(title)
-
-  return(p)
-
-}
-
-
 ##  random foreset
 
 #' randomForestTwo
@@ -258,7 +231,7 @@ features <- function(trainx, trainy, foldNum, repeatNum){
   }
 
   if(foldNum == "leaveone"){
-	ctrl = rfeControl(functions = rfFuncs, 
+	ctrl = rfeControl(functions = rfFuncs,
 		method = "cv", number = numsample, repeats = repeatNum,
 		verbose = FALSE, returnResamp = "all", saveDetails = T,
 		allowParallel=T)
@@ -394,6 +367,19 @@ perfPlot <- function(randomRes, title){
 }
 
 
+#' randomForestTworobust
+#'
+#' @param data
+#' @param metadata
+#' @param response
+#' @param repeatNum
+#' @param foldNum
+#' @param factorLev
+#'
+#' @return
+#' @export
+#'
+#' @examples
 randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
 
 
@@ -484,98 +470,4 @@ randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, 
   return(out)
 
 }
-
-  randomForestTworobust <- function(data, metadata, response, repeatNum, foldNum, factorLev){
-
-
-  #  feature selection function
-
-  features <- function(trainx, trainy, repeatNum){
-    # make sure data & config 's sample is same
-
-    index <- nearZeroVar(trainx)  # find the zero-variance var
-    if(length(index) == 0){data.cle <- trainx}else{data.cle <- trainx[, -index]}
-    # if feature over 100, only add 10 repeats compution
-    if(ncol(data.cle) >= 100){
-      subsets <- c(1:100,seq(101, ncol(data.cle), by=ceiling(ncol(data.cle)-100)/10))
-    }else{
-      subsets <- c(1:ncol(data.cle))
-    }
-    ctrl = rfeControl(functions = rfFuncs, method = "cv", repeats = repeatNum,
-                      verbose = FALSE, returnResamp = "final", saveDetails = T,
-                      allowParallel=T)
-    Profile = rfe(data.cle, trainy, sizes = subsets, rfeControl = ctrl)
-    return(Profile)
-  }
-
-
-  model <- function(trainx, trainy, foldNum){
-    # set the mtry
-    if(ncol(trainx) <= 4 || is.null(ncol(trainx))){
-      grid <- expand.grid(mtry = 2)
-    }else{
-      grid <- expand.grid(mtry = seq(2,floor(sqrt(ncol(trainx))), by=1))
-    }
-    ctrl <- trainControl(method="repeatedcv", number = foldNum, repeats = 10,
-                         summaryFunction=twoClassSummary,  # Use AUC to pick the best model
-                         savePredictions=T,
-                         classProbs=TRUE,
-                         sampling = "up")
-
-    rf  <- train(trainx, trainy,
-                 method = "rf",   # Radial kernel
-                 tuneGrid = grid, #
-                 trControl=ctrl)
-
-    return(rf)
-  }
-
-  # ready data
-  id <- intersect(rownames(data), rownames(metadata))
-  trainy <- metadata[id , response]
-  trainx <- data[id, ]
-  naindex <- which(is.na(trainy)) # rm the NA response
-  if(length(naindex)!=0){
-    trainx <- trainx[-naindex, ]
-    trainy <- trainy[-naindex]
-  }
-  trainy <- as.factor(trainy)
-  levels(trainy) <- factorLev
-
-  # split the data & get the cv dataset
-  if(foldNum == "leaveone"){
-    foldNum <- length(trainy)
-  }
-  foldlist <- createFolds(trainy, foldNum)
-
-  # output
-  featurelist <- list()
-  pred <- c()
-  ture <- c()
-
-  for(i in 1:foldNum){
-    trainxsub <- trainx[-foldlist[[i]], ]
-    trainysub <- trainy[-foldlist[[i]]]
-    testxsub <- trainx[foldlist[[i]], ]
-    testysub <- trainy[foldlist[[i]]]
-
-    featureRes <- features(trainx = trainxsub, trainy = trainysub, repeatNum = repeatNum)
-    opt <- featureRes$optVariables
-    mod <- model(trainx = trainxsub[,opt, drop=F], trainy = trainysub, foldNum = 5)
-
-    featurelist[[i]] <- mod$finalModel$importance
-    pred <- c(pred, predict(mod, testxsub[, opt, drop=F],type="prob")[,2])
-    ture <- c(ture, testysub)
-
-  }
-
-  preddat <- data.frame(predV = pred, obsV = ture)
-  out <- list(feature = featurelist,  cvres = preddat)
-
-  return(out)
-
-}
-
-
-
 

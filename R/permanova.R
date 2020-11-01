@@ -37,6 +37,7 @@ PERMANOVA1 <- function(physeq, sampleid) {
   phe <- phen[phen$SampleID%in%sid, ]
   prf <-  prof %>% select(phen$SampleID) %>%
     t() %>% data.frame()
+
   per <- apply(phe %>% select(-one_of("SampleID")), 2, function(x, pf){
     dat <- data.frame(value = x, pf)
     datphe <- dat$value %>% varhandle::unfactor()
@@ -58,6 +59,8 @@ PERMANOVA1 <- function(physeq, sampleid) {
 
   colnames(per) <- c("SumsOfSample", "Df", "SumsOfSqs",
                      "MeanSqs", "F.Model", "R2", "Pr(>F)")
+
   per$FDR <- p.adjust(per$`Pr(>F)`, method = "BH")
+
   return(per)
 }

@@ -2,8 +2,7 @@
 % Please edit documentation in R/basic.R
 \name{filterEx}
 \alias{filterEx}
-\title{filterEx
-filter the extreme value}
+\title{filterEx}
 \usage{
 filterEx(x, percent.outlier = 0.05)
 }
@@ -16,6 +15,5 @@ filterEx(x, percent.outlier = 0.05)
 vector
 }
 \description{
-filterEx
 filter the extreme value
 }

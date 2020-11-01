@@ -93,9 +93,9 @@ alpha_diversity <- function(physeq_data, method, paired = T){
 
 #' @title hill_number
 #'
-#' @description The hill_number aims to calculate the hill number
+#' @description calculate the hill number
 #' @details 10/01/2020  ShenZhen China
-#' @author(s)  Hua Zou, Huahui Ren
+#' @author(s)   Huahui Ren
 #'
 #' @param phyloseq ,  A \code{phyloseq} object containing merged information of abundance,
 #'        sample data including the measured variables and categorical information of the samples.
@@ -130,7 +130,8 @@ hill_number <- function(phyloseq, q, samID = "row"){
 
 }
 
-###############################################
+
+#' @title Alpha diversity
 #' ggplot2 extension for an iNEXT object
 #' this function focked from the iNEXT package
 #' \code{ggiNEXT}: the \code{\link[ggplot2]{ggplot}} extension for \code{\link{iNEXT}} Object to plot sample-size- and coverage-based rarefaction/extrapolation curves along with a bridging sample completeness curve
@@ -177,7 +178,7 @@ hill_number <- function(phyloseq, q, samID = "row"){
 
 
 
-myggiNEXT.iNEXT <- function(x, type=1, se=TRUE, facet.var="none", color.var="site", grey=FALSE,
+ggiNEXT <- function(x, type=1, se=TRUE, facet.var="none", color.var="site", grey=FALSE,
                           usercolor=NULL){
   TYPE <-  c(1, 2, 3)
   SPLIT <- c("none", "order", "site", "both")

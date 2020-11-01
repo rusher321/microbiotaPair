@@ -1,6 +1,3 @@
-#' @import igraph
-#' @import Matrix
-#' @import SpiecEasi
 #' sparcc network
 #'
 #' @param dat data.frame or matrix, row is sample ID
@@ -49,7 +46,7 @@ sparccNet <- function(dat, cutoff, main, count ,layout = "layout.circle",...){
   }else{
     datRenorm <- round(renorm(dat)*10^7)
   }
-  basesparcc <- sparcc(datRenorm)
+  basesparcc <- SpiecEasi::sparcc(datRenorm)
   graph <- basesparcc$Cor
   num.row <- nrow(graph)
 
@@ -63,7 +60,7 @@ sparccNet <- function(dat, cutoff, main, count ,layout = "layout.circle",...){
   }
 
   diag(graph) <- 0
-  igraph <- adj2igraph(Matrix(graph, sparse=TRUE))
+  igraph <- SpiecEasi::adj2igraph(Matrix::Matrix(graph, sparse=TRUE))
 
   # set edge color，postive correlation
   # postive correlation is red, negative correlation is blue
@@ -98,7 +95,7 @@ sparccNet <- function(dat, cutoff, main, count ,layout = "layout.circle",...){
 #' @export
 #'
 #' @examples
-pairNet <- function(microbiota, metadata, cutoff, species, name){
+pairNet <- function(microbiota, metadata, cutoff, species, name, ...){
 
   # to compute the sparcc
   matchname <- names(table(metadata[, pairID_varname]))[table(metadata[, pairID_varname]) == 2]
@@ -108,7 +105,8 @@ pairNet <- function(microbiota, metadata, cutoff, species, name){
   number <- length(matchname)
   # to make sure the microbiota's sample ID is row
   matchmicrobiota <- microbiota[rownames(matchdat), ]
-  matchmicrobiota <- filterPer(matchmicrobiota, row = 2, percent = 0.2)
+  matchmicrobiota <- rmeta::filterPer(matchmicrobiota, row = 2, ...) # note the rmeta from my package
+
   g1microbiota <- round(matchmicrobiota[1:number, ]*10^7)
   g2microbiota <- round(matchmicrobiota[(number+1):(2*number), ]*10^7)
 
@@ -154,10 +152,8 @@ pairNet <- function(microbiota, metadata, cutoff, species, name){
 
 }
 
-#' @import igraph
-#' @import Matrix
+
 #' simpleNet
-#' a simple network
 #' @param adjmatrix the pairNet result
 #' @param main the network title
 #'
@@ -199,7 +195,20 @@ simplenet <- function(adjmatrix, main,...){
 
 }
 
-simulateNetwork <- function(dat, repeatN , sampleN){
+
+
+#'  repeatNetwork
+#'  to restruct the robust network using the resample method
+#'
+#' @param dat
+#' @param repeatN
+#' @param sampleN
+#'
+#' @return
+#' @export
+#'
+#' @examples
+repeatNetwork <- function(dat, repeatN , sampleN){
 
   # sample the data
   out <- matrix(0, nrow = ncol(dat), ncol = ncol(dat))
@@ -216,12 +225,24 @@ simulateNetwork <- function(dat, repeatN , sampleN){
 }
 
 
-sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
+#' sparCCnetwork
+#'
+#' @param microdata
+#' @param rank
+#' @param phemeta
+#' @param group
+#' @param group_var
+#'
+#' @return
+#' @export
+#'
+#' @examples
+sparCCnetwork <- function(microdata , rank, phemeta, group, group_var){
 
   # generate the result
-  library(phyloseq)
-  library(SpiecEasi)
-  library(rmeta)
+  # library(phyloseq)
+  # library(SpiecEasi)
+  # library(rmeta)
 
   phe.cln <- sample_data(phemeta[phemeta[, group_var]==group, ])
   otu.cln <- microdata[,rownames(phe.cln)]
@@ -249,16 +270,25 @@ sparCCnetwork <- function(microdata , rank , phemeta, group, group_var){
 ####
 
 
+#' Network toplogy
+#'
+#' @param cor_matrix
+#' @param cutoff
+#'
+#' @return
+#' @export
+#'
+#' @examples
 network_sta <- function(cor_matrix, cutoff = 0.3){
 
   #cutoff <- 0.3
-  library(igraph)
+  #library(igraph)
 
   diag(cor_matrix) <- 0
   g0_trans <- ifelse(cor_matrix < -cutoff & cor_matrix < 0 , -1,
                      ifelse(cor_matrix > cutoff & cor_matrix > 0, 1, 0))
-  g0_net <- graph_from_incidence_matrix(g0_trans)
-
+  #g0_net <- graph_from_incidence_matrix(g0_trans)
+  g0_net <- adj2igraph(Matrix(g0_trans, sparse=TRUE))
   # output
   range_g0 <- quantile(cor_matrix[lower.tri(cor_matrix)])
   edge_g0 <-  c(sum(g0_trans[lower.tri(g0_trans)]==1), sum(g0_trans[lower.tri(g0_trans)]==-1))
@@ -276,7 +306,17 @@ network_sta <- function(cor_matrix, cutoff = 0.3){
 
 
 
-# plot
+#' Network_tran
+#' Transform the matrix to ggraph structure
+#'
+#' @param adj
+#' @param abun
+#' @param rankinf
+#'
+#' @return
+#' @export
+#'
+#' @examples
 network_tran <- function(adj, abun, rankinf){
 
   ### edge inf

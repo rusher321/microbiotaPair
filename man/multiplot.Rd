@@ -2,8 +2,7 @@
 % Please edit documentation in R/basic.R
 \name{multiplot}
 \alias{multiplot}
-\title{multiplot
-multi plot to combine}
+\title{multiplot}
 \usage{
 multiplot(plotlist, file, cols = 1, layout = NULL)
 }
@@ -14,6 +13,5 @@ multiplot(plotlist, file, cols = 1, layout = NULL)
 
 }
 \description{
-multiplot
-multi plot to combine
+combine multi plot to one
 }

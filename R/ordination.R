@@ -75,8 +75,8 @@ ordination <- function(physeq, which_distance="bray", method="NMDS", grouping_co
   }else if(method == "PCA"){
     sol <- stats::prcomp(otu_table, scale. = TRUE, rank. = 2)
   }else if(method == "Tsne"){
-    sol <- tsnemicrobiota::tsne_phyloseq(physeq, distance=which_distance,
-                                          perplexity = 8, verbose=0, rng_seed = 3901)
+    #sol <- tsnemicrobiota::tsne_phyloseq(physeq, distance=which_distance,
+    #                                      perplexity = 8, verbose=0, rng_seed = 3901)
   }else{
     sol <- phyloseq::ordinate(physeq, method, distance=which_distance)
   }

@@ -7,17 +7,20 @@
 filterPer(x, row, percent, include = T)
 }
 \arguments{
-\item{x}{a data.frame object, species abundance profile}
+\item{x}{, a data.frame object, species abundance profile}
 
-\item{row}{a numberic, 1/2}
+\item{row, }{a numberic, 1/2}
 
-\item{percent}{percent to retain or remove}
+\item{percent, }{percent to retain or remove}
 
-\item{include}{a logistic , T/F}
+\item{include, }{a logistic , T/F}
 }
 \value{
 data.frame
 }
 \description{
 filterPer
+}
+\examples{
+
 }
