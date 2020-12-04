@@ -5,8 +5,8 @@
 `microbiotaPair` defines microbiota study to Pair sample. The
 goal is to  Simplified Microbiome Analysis Workflows  on Intervention Study
 
-![pip](data/microbiota.png)
 
+<img src="dat/microbiota.png" width="100">
 
 Contributors
 ------------
