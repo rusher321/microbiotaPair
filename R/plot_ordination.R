@@ -18,6 +18,11 @@
 #'        information.
 #' @param PID   id (Required) for paired test
 #'
+#' @param paired
+#'
+#' @param circle
+#'
+#'
 #' @param time_colour  a vector include the color
 #'
 #' @return Returns a ggplot object.
@@ -36,7 +41,7 @@
 #' @export plot_ordination
 #'
 plot_ordination <- function(ordination.res, phylores, method, grouping_column="Stage",
-                            PID="ID" , paired = F, time_colour = NULL){
+                            PID="ID" , paired = F, circle = F, time_colour = NULL, ...){
 
   if(method == "Tsne"){
     temp <- data.frame(ordination.res$solution$tsne$par)
@@ -89,10 +94,14 @@ plot_ordination <- function(ordination.res, phylores, method, grouping_column="S
   if(paired){
     p <- p + geom_line(aes(group=PID), linetype = "dashed", alpha = 0.3)
   }
-    p <- p + geom_text(data = group_label, aes(x=Axis1, y=Axis2, label=grouping, color=grouping)) +
-    geom_polygon(data = group_border, aes(fill = grouping), color = "black", alpha = 0.1, show.legend = FALSE)+
-    #scale_color_manual(values = cols)+
-    guides(group=F, fill=F, color=F)+
+    p <- p + geom_text(data = group_label, aes(x=Axis1, y=Axis2, label=grouping, color=grouping))
+
+  if(circle){
+    P <- p+stat_ellipse(aes(color = grouping), geom = "polygon", alpha =0.1, ...)
+  }else{
+    p <- p+geom_polygon(data = group_border, aes(fill = grouping), color = "black", alpha = 0.1, show.legend = FALSE)
+  }  #scale_color_manual(values = cols)+
+    p <- p +guides(group=F, fill=F, color=F)+
     geom_hline(yintercept = 0, linetype = "dashed")+
     geom_vline(xintercept = 0, linetype = "dashed")
 
@@ -147,7 +156,7 @@ plot_ordination <- function(ordination.res, phylores, method, grouping_column="S
 #' @export
 #'
 #' @examples
-comtaxTop <- function(dat, group, top, group_var){
+comtaxTop <- function(dat, group, top, group_var, group_col){
 
   # order features
   library(tidyverse)
@@ -170,17 +179,16 @@ comtaxTop <- function(dat, group, top, group_var){
   }
 
   # order samples
-  a <- data.frame(Sum = as.numeric(dat[order_feature[1],]))
+  a <- data.frame(Sum = as.numeric(dat[order_feature[1], ]))
   rownames(a) <- colnames(dat)
-  group <- group[rownames(a), group_varname, drop=F]
+  group <- group[rownames(a), group_var, drop = F]
   colnames(group) <- "Group"
-  a <- cbind(a,group) %>% rownames_to_column(var="SampleID")
-  a <- a[order(a$Sum,decreasing = T),]
-  a <- a[order(a$Group),]
+  a <- cbind(a, group) %>% rownames_to_column(var = "SampleID")
+  a <- a[order(a$Sum, decreasing = T), ]
+  a <- a[order(a$Group), ]
   order_sampels <- as.character(a$SampleID)
   a$y = ""
   a$SampleID <- factor(a$SampleID, levels = order_sampels)
-
   # Dataframe transform
   dat2 <- dat %>%
     rownames_to_column(var="Species") %>%
@@ -218,7 +226,7 @@ comtaxTop <- function(dat, group, top, group_var){
     geom_tile()+
     xlab("Samples")+ylab("")+
     scale_y_discrete(expand = c(0,0))+
-    scale_fill_manual(values = time_colour)+
+    scale_fill_manual(values = group_col)+
     theme_bw()+
     theme(
       axis.title = element_text(size = 14,color = "black"),

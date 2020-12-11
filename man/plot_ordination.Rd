@@ -18,6 +18,10 @@ information.}
 
 \item{PID}{id (Required) for paired test}
 
+\item{paired}{}
+
+\item{circle}{}
+
 \item{time_colour}{a vector include the color}
 }
 \value{

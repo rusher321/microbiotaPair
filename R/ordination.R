@@ -11,7 +11,7 @@
 #' The function a solution of ordination, PERMANOVA results and beta dispersion results. See value for details.
 #'
 #' @details 14/01/2020  ShenZhen China
-#' @author  Hua Zou
+#' @author  Hua Zou, Huahui Ren
 #'
 #' @param physeq (Required). A \code{phyloseq} object containing merged information of abundance,
 #'        taxonomic assignment, sample data including the measured variables and categorical information
@@ -46,15 +46,31 @@
 ordination <- function(physeq, which_distance="bray", method="NMDS", grouping_column, pvalue.cutoff=0.05){
 
   meta_table <- data.frame(phyloseq::sample_data(physeq))
-  otu_table <- data.frame(phyloseq::otu_table(physeq))
+  otu_table <- t(data.frame(phyloseq::otu_table(physeq)))
   meta_table$Groups <- meta_table[, grouping_column]
+
+  # to compute the pairwise distance
+  if(which_distance == "Hell"){
+    distD <- vegan::vegdist(vegan::decostand(otu_table, method = "hellinger"),
+                            method = "euclidean", binary = 1)
+  }else if(which_distance == "jsd"){
+    distD <- philentropy::JSD(otu_table)
+    rownames(distD) <- colnames(distD) <- rownames(otu_table)
+    distD <- as.dist(distD)
+  }else if(which_distance == "spearman"){
+    distD <- as.dist(1-cor(t(otu_table), method = "s"))
+  }else{
+    distD <- phyloseq::distance(physeq, method=which_distance)
+  }
 
   beta_disper <- function(physeq,grouping_column,pvalue.cutoff=0.05,which_distance){
 
     meta_table <- data.frame(sample_data(physeq))
     meta_table$Groups <- meta_table[,grouping_column]
     # compute beta dispersion
-    mod<- vegan::betadisper(phyloseq::distance(physeq,method=which_distance),meta_table$Groups,type="centroid")
+
+    mod<- vegan::betadisper(distD, meta_table$Groups, type="centroid")
+
     # compute pairwise beta dispersion for all levels in the grouping variable
     pmod <- vegan::permutest(mod, permutations = 99, pairwise = TRUE)
     p.values <- pmod$pairwise$observed
@@ -64,24 +80,27 @@ ordination <- function(physeq, which_distance="bray", method="NMDS", grouping_co
     groups_compared <- names(p.values)
 
     betadisper_res <- data.frame(groups_compared, p.values, signi_label)
-    out <- list("betadisper_res"=betadisper_res, "pmod"=pmod)
+    out <- list("betadisper_res" = betadisper_res, "pmod"=pmod)
+
     return(out)
   }
 
 
   sol <- NULL
   if(method == "PCoA"){
-    sol <- cmdscale(phyloseq::distance(physeq, which_distance),eig=T)
+    sol <- cmdscale(distD, eig=T)
   }else if(method == "PCA"){
     sol <- stats::prcomp(otu_table, scale. = TRUE, rank. = 2)
   }else if(method == "Tsne"){
-    #sol <- tsnemicrobiota::tsne_phyloseq(physeq, distance=which_distance,
-    #                                      perplexity = 8, verbose=0, rng_seed = 3901)
+    sol <- Rtsne::Rtsne(distD, is_distance = T)
+  }else if(method == "NMDS"){
+    sol <- vegan::metaMDSiter(distD)
   }else{
     sol <- phyloseq::ordinate(physeq, method, distance=which_distance)
   }
-  dist <- phyloseq::distance(physeq,which_distance)
-  adonis_res <- vegan::adonis(dist ~ Groups, data=meta_table)
+
+  #dist <- phyloseq::distance(physeq,which_distance)
+  adonis_res <- vegan::adonis(distD ~ Groups, data=meta_table)
 
   betadisper_pw <- beta_disper(physeq, grouping_column, pvalue.cutoff, which_distance)
   betadisper_pw <- betadisper_pw$betadisper_res

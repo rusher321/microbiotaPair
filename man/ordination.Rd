@@ -50,5 +50,5 @@ ord.res <- ordination(physeq, method = "NMDS", grouping_column = "Stage")
 \url{http://userweb.eng.gla.ac.uk/umer.ijaz/}, Umer Ijaz, 2015
 }
 \author{
-Hua Zou
+Hua Zou, Huahui Ren
 }
