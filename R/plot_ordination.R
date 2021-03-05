@@ -132,7 +132,7 @@ plot_ordination <- function(ordination.res, phylores, method, grouping_column="S
     adn_res_format <- bquote(atop(atop("PERMANOVA",R^2==~.(adn_rsquared)), atop("p-value="~.(adn_pvalue)~.(signi_label), phantom())))
 
     #annotate plot with adonis results
-    p <- p + annotate("text", x = max(df_mdat$Axis1),
+    p <- p + annotate("text", x = 0.85*max(df_mdat$Axis1),
                        y = min(df_mdat$Axis2),
                        label = adn_res_format)
   }
@@ -156,12 +156,12 @@ plot_ordination <- function(ordination.res, phylores, method, grouping_column="S
 #' @export
 #'
 #' @examples
-comtaxTop <- function(dat, group, top, group_var, group_col){
+comtaxTop <- function(dat, group, top, group_var, group_col, orderSum){
 
   # order features
   library(tidyverse)
   b <- data.frame(
-    Max = apply(dat,1,mean)
+    Max = apply(dat, 1, median)
   ) %>%
     rownames_to_column(var="Species") %>%
     arrange(desc(Max))
@@ -179,7 +179,11 @@ comtaxTop <- function(dat, group, top, group_var, group_col){
   }
 
   # order samples
-  a <- data.frame(Sum = as.numeric(dat[order_feature[1], ]))
+  if(orderSum){
+    a <- data.frame(Sum = as.numeric(colSums(dat)))
+  }else{
+    a <- data.frame(Sum = as.numeric(dat[order_feature[1], ]))
+  }
   rownames(a) <- colnames(dat)
   group <- group[rownames(a), group_var, drop = F]
   colnames(group) <- "Group"
@@ -205,7 +209,8 @@ comtaxTop <- function(dat, group, top, group_var, group_col){
     stop("add the colors scale!")
   }
   p1 <- ggplot(dat2,aes(Samples,Abundance,fill=Species))+
-    geom_bar(stat = "identity",color="black")+
+    #geom_bar(stat = "identity",color="black")+
+    geom_bar(aes(fill = Species), stat = "identity")+
     scale_y_continuous(expand = expand_scale(mult = c(0,0.1)))+
     scale_fill_manual(values = Colors)+
     xlab("") + ylab("Relative abundance")+

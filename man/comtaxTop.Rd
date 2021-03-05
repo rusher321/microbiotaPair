@@ -4,7 +4,7 @@
 \alias{comtaxTop}
 \title{comtaxTop}
 \usage{
-comtaxTop(dat, group, top, group_var, group_col)
+comtaxTop(dat, group, top, group_var, group_col, orderSum)
 }
 \arguments{
 \item{group_var}{}
