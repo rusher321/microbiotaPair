@@ -38,7 +38,7 @@ Meta
 -   Please [report any issues or
     bugs](https://github.com/rusher321/microbiotaPair/issues).
 -   License: MIT
--   Get citation information for `taxa` in R doing
+-   Get citation information for `microbiotaPair` in R doing
     `citation(package = 'microbiotaPair')`
 -   Please note that this project is released with a [Contributor Code
     of Conduct](CONDUCT.md). By participating in this project you agree
