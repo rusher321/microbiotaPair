@@ -154,8 +154,29 @@ comtaxTop(dat = pmv_genus_g, group = metadata_s, top = 10, group_var = "Group")
 ### sparCC (spearman)
 source("../R/network.R")
 library(Matrix)
-rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
-rownames(rankclass) <- rankclass$V7
+
+#rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
+#rownames(rankclass) <- rankclass$V7
+  
+rankclass <-
+  read_tsv("../data/metaphlan3.merged.abundance.profile.all.tsv") %>%
+  select(clade_name) %>%
+  filter(str_detect(clade_name, "s__[^|]*$")) %>%
+  rowwise() %>%
+  mutate(
+    kingdom = str_split(clade_name, "\\|")[[1]][1],
+    phylum = str_split(clade_name, "\\|")[[1]][2],
+    class = str_split(clade_name, "\\|")[[1]][3],
+    order = str_split(clade_name, "\\|")[[1]][4],
+    family = str_split(clade_name, "\\|")[[1]][5],
+    genus = str_split(clade_name, "\\|")[[1]][6],
+    species = str_split(clade_name, "\\|")[[1]][7]
+  ) %>%
+  arrange(clade_name) %>%
+  select(-clade_name) %>%
+  as.data.frame()
+rownames(rankclass) <- rankclass$species
+  
 
 microdata <- otu_table(phylo2)
 # >0.5
@@ -201,8 +222,9 @@ library(ggraph)
 
 
 source("../R/network.R")
-rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
-rownames(rankclass) <- rankclass$V7
+#rankclass <- read.table("../data/metaphlan2.rankclass.tab", sep = "\t")
+#rownames(rankclass) <- rankclass$V7
+
 species_d <- otu_table(phylo2)
 species_input <- renorm(t(species_d))
 
