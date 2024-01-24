@@ -6,7 +6,7 @@
 goal is to  Simplified Microbiome Analysis Workflows  on Intervention Study
 
 
-<img src="data/microbiota.png" width="500">
+<img src="data/microbioP.png" width="500">
 
 Contributors
 ------------
