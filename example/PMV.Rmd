@@ -13,6 +13,7 @@ library(tibble)
 library(reshape)
 library(phyloseq)
 library(ggplot2)
+library(dplyr)
 source("../R/convert_data_into_phyloseq.R")
 source("../R/config.R")
 ## profile 
@@ -133,7 +134,8 @@ source("../R/plot_ordination.R")
 library(ggplot2)
 library(RColorBrewer)
 library(ggpubr)
-comtaxTop(dat = splittax$pmv_genus, group = metadata, top = 10, group_var = "Group")
+library(rmeta)
+microbiotaPair::comtaxTop(dat = splittax$pmv_genus, group = metadata, top = 10, group_var = "Group", orderSum = F)
 ## Top10 Species 
 comtaxTop(dat = splittax$pmv_species, group = metadata, top = 10, group_var = "Group")
 
