@@ -34,7 +34,7 @@
 #'
 #' data(physeq_data)
 #' physeq <- physeq_data
-#' ord.res <- ordination(physeq, method="NMDS", grouping_column="Stage")
+#' ord.res <- ordination(physeq, method="PCoA", grouping_column="Stage")
 #' plot_ordination(ord.res, physeq, method="PCoA", grouping_column="Stage", PID="ID")
 #'
 #'
